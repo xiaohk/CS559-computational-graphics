@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!--
+Created using JS Bin
+http://jsbin.com
+
+Copyright (c) 2017 by xiaohk (http://jsbin.com/laqumat/3/edit)
+
+Released under the MIT license: http://jsbin.mit-license.org
+-->
+<meta name="robots" content="noindex">
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Project 2</title>
+</head>
+<body>
+  <h1>Morning Nightmare</h1>
+  <p>Zijie (Jay) Wang</p>
+  <p><a href="mailto:zwang688@wisc.edu?Subject=You can enroll CS559 :P" >zwang688@wisc.edu</a></p>
+  <canvas id = "myCanvas" width="600" height="400" style="border:1px solid #000000;"></canvas>
+  <br></br>
+  Speed: <input id="slider1" type="range" min="1" max="20" step=".2"/>
+  <br></br>
+  Shake: <input id="slider2" type="range" min="0" max="80" step="1.0"/>
+<br />
+
+<script src="clock.js"></script>
+<script src="sun.js"></script>
+
+<script id="jsbin-javascript">
+"use strict"
+
+/*
+Wrap all the classes together
+*/
+function myApp() {
+    var myCanvas = document.getElementById("myCanvas")
+    var myContext = myCanvas.getContext('2d')
+    var slider1 = document.getElementById("slider1")
+    slider1.value = 1
+    var slider2 = document.getElementById("slider2")
+    slider2.value = 0
+
+    var clockList = []
+    var mySun
+
+    /*
+    Function to wrap all the drawing function together, and add animation
+    */
+    function draw() {
+        // Clear the canvas
+        myContext.clearRect(0, 0, myCanvas.width, myCanvas.height)
+        myContext.save();
+        clockList.forEach(function(c) {
+            c.speed = slider1.value
+        })
+        clockList.forEach(function(c) {
+            c.shakeDegree = slider2.value
+        })
+        clockList.forEach(function(c) {
+            c.update()
+        })
+        clockList.forEach(function(c) {
+            c.draw()
+        })
+        mySun.speed = slider1.value
+        mySun.update()
+        mySun.draw()
+        myContext.restore();
+        window.requestAnimationFrame(draw);
+    }
+
+    // Add a new clock
+    // We can draw more clocks, but I choose to add a moving sun instead
+    clockList.push(new Clock(myContext, 300, 300, 50, slider1.value, slider2.value))
+
+    // Make sun
+    mySun = new Sun(myContext, 30, Math.PI / 2 + 0.55, slider1.value)
+
+    // Display
+    draw()
+}
+window.onload = myApp
+
+</script>
+</body>
+</html>
