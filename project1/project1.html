@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<!--
+Created using JS Bin
+http://jsbin.com
+
+Copyright (c) 2017 by xiaohk (http://jsbin.com/heciqu/2/edit)
+
+Released under the MIT license: http://jsbin.mit-license.org
+-->
+<meta name="robots" content="noindex">
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Project 1</title>
+</head>
+<body>
+    <h2>Project 1: Sharingan</h2>
+    <p>Zijie(Jay) Wang <br> zwang688@wisc.edu </p>
+    <canvas id="myCanvas" width="400" height="400"></canvas>
+    <br>
+    Size:&nbsp;&nbsp;&nbsp;&nbsp;<input id="slider2" type="range" min="10" max="193" step=".2"/>
+    <br>
+    Speed: <input id="slider1" type="range" min="1" max="20" step=".2"/>
+    <h2> Description </h2>
+    <p>
+        Sharingan (写輪眼) is a speicial and powerful eye in the anime Naruto. <br>The black rotating component is called magatama, and the sharingan with three magatamas is the strongest.
+        <br>To draw the magatama, I used three circle masks, instead of bezier curve which is very hard to compute.
+    </p>
+    <p>
+        In anime, sharingan looks like below (and the magatama does rotate in combats).
+        <br>
+        <img src="https://vignette.wikia.nocookie.net/naruto/images/6/65/Itachi%27s_Sharingan.png" style="height:228px;">
+    </p>
+<script src="sharingan.js"></script>
+<script id="jsbin-javascript">
+
+// Add animation
+var canvas = document.getElementById('myCanvas')
+var context = canvas.getContext('2d')
+var slider1 = document.getElementById("slider1")
+slider1.value = 1
+var slider2 = document.getElementById("slider2")
+slider2.value = 100
+var sharingan = new Sharingan(context, 200, 200, 100, slider1.value, 0)
+
+draw = function(){
+    // Clear the canvas
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.save()
+    sharingan.speed = slider1.value
+    sharingan.radius = slider2.value
+    sharingan.update()
+    sharingan.draw()
+    context.restore()
+    window.requestAnimationFrame(draw)
+}
+draw()
+</script>
+</body>
+</html>
