@@ -1,11 +1,13 @@
-function MyApp(){"use strict"
+function Vileplume(){"use strict"
     var canvas = document.getElementById('myCanvas')
     var context = canvas.getContext('2d')
     var m4 = twgl.m4
     var slider1 = document.getElementById('slider1')
-    slider1.value = 0
+    slider1.value = 1
     var slider2 = document.getElementById('slider2')
     slider2.value = 0
+    var angle1 = Math.PI/2
+    var angle2 = 0
 
     // Move object to the center
     var offset_x = 250
@@ -277,12 +279,14 @@ function MyApp(){"use strict"
         var TleftHand_to_world = times(times(m4.rotationY(Math.PI/2),
                                              m4.rotationZ(angleHand)),
                                        m4.translation(coords[0]))
-        drawLimb(10, 10, 40, times(TleftHand_to_world, Tworld_to_camera))
+        drawLimb(10, 10, 40, times(times(TleftHand_to_world, Tmodel_to_world),
+                                   Tworld_to_camera))
         // Right hand
-        var TrightHand_to_world = times(times(times(m4.rotationY(-Math.PI/2),
+        var TrightHand_to_world = times(times(m4.rotationY(-Math.PI/2),
                                              m4.rotationZ(-angleHand)),
-                                       m4.translation(coords[1])), Tmodel_to_world)
-        drawLimb(10, 10, 40, times(TrightHand_to_world, Tworld_to_camera))
+                                       m4.translation(coords[1]))
+        drawLimb(10, 10, 40, times(times(TrightHand_to_world, Tmodel_to_world),
+                                   Tworld_to_camera))
         // Left foot
         // Compute the rotation axis
         var raLeft = twgl.v3.cross([0, 1, 0], [1, 0, 1])
@@ -290,17 +294,20 @@ function MyApp(){"use strict"
         var TleftFoot_to_world = times(times(m4.rotationY(Math.PI/4),
                                              m4.axisRotation(raLeft, angleFeet)),
                                        m4.translation(coords[2]))
-        drawLimb(20, 10, 70, times(TleftFoot_to_world, Tworld_to_camera))
+        drawLimb(20, 10, 70, times(times(TleftFoot_to_world, Tmodel_to_world),
+                                   Tworld_to_camera))
         // Right foot
         var TrightFoot_to_world = times(times(m4.rotationY(-Math.PI/4),
                                              m4.axisRotation(raRight, angleFeet)),
                                         m4.translation(coords[3]))
-        drawLimb(20, 10, 70, times(TrightFoot_to_world, Tworld_to_camera))
+        drawLimb(20, 10, 70, times(times(TrightFoot_to_world, Tmodel_to_world),
+                                   Tworld_to_camera))
 
     }
     
     // Animation of vileplume
     function update(){
+        speed = slider1.value
         if (yt >= 300 || yt <= 100){
             jumpOffset *= -1
             handAngleOffset *= -1
@@ -309,6 +316,15 @@ function MyApp(){"use strict"
         var yStatus = (200 - yt) / 200
         handAngle = yStatus * 120 * Math.PI/180 
         footAngle = -Math.min(0.0, -yStatus) * 160 * Math.PI/180
+
+        // Control rotate or not
+        if (checkbox1.checked){
+            angle1 += Math.PI/360
+            angle2 = yStatus * 50 * Math.PI/180
+        } else {
+            angle1 = Math.PI/2
+            angle2 = 0
+        }
     }
 
 
@@ -316,9 +332,9 @@ function MyApp(){"use strict"
     function draw(){
         // Clear the canvas
         canvas.width = canvas.width;
-        var angle1 = slider1.value * 0.01 * Math.PI
-        var angle2 = slider2.value * 0.01 * Math.PI
-        var angle3 = 0
+        // var angle1 = slider1.value * 0.01 * Math.PI
+        // var angle2 = slider2.value * 0.01 * Math.PI
+        // var angle3 = 0
         var cameraRadius = 500
 
         // Basis of our world coordinate
@@ -336,13 +352,11 @@ function MyApp(){"use strict"
         
         // We want to draw the axes in the camera transform, so when we rotate
         // the object horizontally axes wont change
-        drawAxes(Tworld_to_camera)
+        // drawAxes(Tworld_to_camera)
         // Better to draw the body first, so it looks more real
         drawLimbs(handAngle, footAngle, Tworld_to_camera, Tmodel_to_world)
         drawBody(Tmodel_to_camera)
         drawCap(Tmodel_to_camera)
-        
-        
         update()
     }
     
@@ -365,11 +379,19 @@ function MyApp(){"use strict"
         }
     }
 
+    function tt(){
+        console.log(10)
+    }
+
     slider1.addEventListener("input",draw)
     slider2.addEventListener("input",draw)
+
+    // Add checkbox listener
+    var checkbox = document.querySelector("input[id=checkbox1]");
+    checkbox.addEventListener('change', update)
     startAnimation(15)
     // draw()
 }
 
-window.onload = MyApp
+window.onload = Vileplume
 
