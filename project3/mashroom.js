@@ -11,22 +11,29 @@ function MyApp(){"use strict"
     var offset_x = 250
     var offset_y = 300
 
+    // Animation variables
+    var fpsInterval, now, last
+    var speed = 1
+    var jumpOffset = -2
+    var handAngleOffset = 1 
+    var handAngle = 60 * Math.PI/180
+    var footAngle = 80 * Math.PI/180
+
     // Cap center information
-    var xt = 250, yt = 300, zt = 250
+    var xt = 0, yt = 100, zt = 0
     var xb = 250, yb = 50, zb = 250
 
-
     // Helper funciton to to moveTo in 3D
-    function moveToTx(x,y,z,Tx){
-        var loc = [x,y,z];
-        var locTx = m4.transformPoint(Tx,loc)
+    function moveToTx(x, y, z, Tx){
+        var loc = [x, y, z];
+        var locTx = m4.transformPoint(Tx, loc)
         // We need to flip y and change origin here
         context.moveTo(locTx[0] + offset_x, -locTx[1] + offset_y)
     }
 
     // Helper function to do moveTo in 3D
-    function lineToTx(x,y,z,Tx){
-        var loc = [x,y,z];
+    function lineToTx(x, y, z, Tx){
+        var loc = [x, y, z];
         var locTx = m4.transformPoint(Tx,loc)
         // We don't need to flip y or change origin here
         context.lineTo(locTx[0] + offset_x, -locTx[1] + offset_y)
@@ -125,7 +132,7 @@ function MyApp(){"use strict"
 
     function drawBody(Tx){
         // Starting for the lower part of cap
-        var theta = (27/32) * Math.PI
+        var theta = -(27/32) * Math.PI
         var phi = 0
         var location = []
         var topPoint = []
@@ -152,11 +159,11 @@ function MyApp(){"use strict"
 
                 // Record the top and bottom circle points
                 if (yOffset == 0){
-                    if (phiTime % 5 == 0){
+                    if (phiTime % 2 == 0){
                         topPoint.push(location)
                     }
                 } else if (yOffset == 150){
-                    if (phiTime % 5 == 0){
+                    if (phiTime % 2 == 0){
                         bottomPoint.push(location)
                     }
                 }
@@ -180,7 +187,7 @@ function MyApp(){"use strict"
     }
 
     // Function to draw the hand and feet of vileplume
-    function drawLim(xWidth, yWidth, zWidth, Tx){
+    function drawLimb(xWidth, yWidth, zWidth, Tx){
         var rotate = 0
         var x = 0, y = 0, z = 0
         var xbl = xWidth, ybl = yWidth, zbl = zWidth
@@ -198,8 +205,8 @@ function MyApp(){"use strict"
                      ztl + zbl * Math.sin(theta) * Math.sin(phi),
                      Tx)
             // Control how smooth the segments to be
-            for (theta = (1/64) * Math.PI; theta <= Math.PI; 
-                theta += (1/64) * Math.PI){
+            for (theta = (1/32) * Math.PI; theta <= Math.PI; 
+                theta += (1/32) * Math.PI){
                 lineToTx(xtl + xbl * Math.sin(theta) * Math.cos(phi),
                 ytl + ybl * Math.cos(theta),
                 ztl + zbl * Math.sin(theta) * Math.sin(phi),
@@ -218,8 +225,8 @@ function MyApp(){"use strict"
                      ztl + zbl * Math.sin(theta) * Math.sin(phi),
                      Tx)
 
-            for (phi = (1/64) * Math.PI; phi <= 2 * Math.PI;
-                 phi += (1/64) * Math.PI){
+            for (phi = (1/32) * Math.PI; phi <= 2 * Math.PI;
+                 phi += (1/32) * Math.PI){
                 lineToTx(xtl + xbl * Math.sin(theta) * Math.cos(phi),
                          ytl + ybl * Math.cos(theta),
                          ztl + zbl * Math.sin(theta) * Math.sin(phi),
@@ -231,7 +238,7 @@ function MyApp(){"use strict"
     }
 
     // Compute the coordinate of limps
-    function limpsCoord(){
+    function limbsCoord(){
         var coords = []
         var theta = (27/32) * Math.PI
         // Hands
@@ -247,13 +254,14 @@ function MyApp(){"use strict"
         ])
 
         // Feet
+        // theta = (10/32) * Math.PI
         coords.push([
-            xt + (xb + 150/3) * Math.sin(theta),
+            xt + (xb - 150) * Math.sin(theta),
             yt + yb * Math.cos(theta) - 150,
             zt
         ])
         coords.push([
-            xt + (xb + 150/3) * Math.sin(theta) * (-1),
+            xt + (xb - 150) * Math.sin(theta) * (-1),
             yt + yb * Math.cos(theta) - 150,
             zt
         ])
@@ -261,22 +269,46 @@ function MyApp(){"use strict"
     }
 
     // Draw 4 limps hierarchically
-    function drawLimps(angleHand, angleFeet, Tworld_to_camera){
+    function drawLimbs(angleHand, angleFeet, Tworld_to_camera, Tmodel_to_world){
+        context.strokeStyle = "rgb(116, 133, 171)"
         // Compute the hand translation coordinates
-        var coords = limpsCoord()
+        var coords = limbsCoord()
         // Left hand
         var TleftHand_to_world = times(times(m4.rotationY(Math.PI/2),
                                              m4.rotationZ(angleHand)),
                                        m4.translation(coords[0]))
-        drawLim(10, 10, 60, times(TleftHand_to_world, Tworld_to_camera))
+        drawLimb(10, 10, 40, times(TleftHand_to_world, Tworld_to_camera))
         // Right hand
-        var TleftHand_to_world = times(times(m4.rotationY(-Math.PI/2),
+        var TrightHand_to_world = times(times(times(m4.rotationY(-Math.PI/2),
                                              m4.rotationZ(-angleHand)),
-                                       m4.translation(coords[1]))
-        drawLim(10, 10, 60, times(TleftHand_to_world, Tworld_to_camera))
-
+                                       m4.translation(coords[1])), Tmodel_to_world)
+        drawLimb(10, 10, 40, times(TrightHand_to_world, Tworld_to_camera))
         // Left foot
+        // Compute the rotation axis
+        var raLeft = twgl.v3.cross([0, 1, 0], [1, 0, 1])
+        var raRight = twgl.v3.cross([0, 1, 0], [-1, 0, 1])
+        var TleftFoot_to_world = times(times(m4.rotationY(Math.PI/4),
+                                             m4.axisRotation(raLeft, angleFeet)),
+                                       m4.translation(coords[2]))
+        drawLimb(20, 10, 70, times(TleftFoot_to_world, Tworld_to_camera))
+        // Right foot
+        var TrightFoot_to_world = times(times(m4.rotationY(-Math.PI/4),
+                                             m4.axisRotation(raRight, angleFeet)),
+                                        m4.translation(coords[3]))
+        drawLimb(20, 10, 70, times(TrightFoot_to_world, Tworld_to_camera))
 
+    }
+    
+    // Animation of vileplume
+    function update(){
+        if (yt >= 300 || yt <= 100){
+            jumpOffset *= -1
+            handAngleOffset *= -1
+        }
+        yt += jumpOffset * speed
+        var yStatus = (200 - yt) / 200
+        handAngle = yStatus * 120 * Math.PI/180 
+        footAngle = -Math.min(0.0, -yStatus) * 160 * Math.PI/180
     }
 
 
@@ -298,37 +330,46 @@ function MyApp(){"use strict"
         var up = [0,1,0]
 
         var Tworld_to_camera = m4.inverse(m4.lookAt(eye,target,up))
-        var Tmodel_to_world  = m4.axisRotation(axis,angle3)
+        var Tmodel_to_world  = m4.axisRotation(axis,angle2)
         // In Twgl convention, first transformation is on the left
         var Tmodel_to_camera = times(Tmodel_to_world,Tworld_to_camera)
-        
-        // Then there are four more local models
-        var TleftHand_to_world = times(m4.axisRotation([1, 0, 0], angle2),
-                                       m4.translation([0, 100, 0]))
-
-        var TrightHand_to_world = 0
-        var TleftFoot_to_world = 0
-        var TrightFoot_to_world = 0
         
         // We want to draw the axes in the camera transform, so when we rotate
         // the object horizontally axes wont change
         drawAxes(Tworld_to_camera)
         // Better to draw the body first, so it looks more real
+        drawLimbs(handAngle, footAngle, Tworld_to_camera, Tmodel_to_world)
         drawBody(Tmodel_to_camera)
         drawCap(Tmodel_to_camera)
-        drawLimps(angle2, angle2, Tworld_to_camera)
         
-        //var mt = m4.translation([0, 100, 0])
-        //var mrotate = m4.axisRotation([1, 0, 0], angle2)
-        //var mtr = m4.multiply(Tmodel_to_camera, mt)
-        //ar Tlim = m4.multiply(mrotate, mtr)
-        // drawLim(50, 100, times(TleftHand_to_world, Tworld_to_camera))
         
+        update()
     }
     
-      slider1.addEventListener("input",draw)
-      slider2.addEventListener("input",draw)
-      draw()
+    // Start animation
+    function startAnimation(fps){
+        fpsInterval = 1000 / fps
+        last = Date.now()
+        animate()
+    }
+
+    // Funciton to call animation and control the FPS
+    function animate(){
+        requestAnimationFrame(animate)
+        
+        // Compare the time interval
+        now = Date.now()
+        if (now - last > fpsInterval){
+            last = now - ((now - last) % fpsInterval)
+            draw()
+        }
+    }
+
+    slider1.addEventListener("input",draw)
+    slider2.addEventListener("input",draw)
+    startAnimation(15)
+    // draw()
 }
+
 window.onload = MyApp
 
