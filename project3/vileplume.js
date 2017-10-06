@@ -327,7 +327,7 @@ function Vileplume(){"use strict"
 
         var TlEye = times(m4.rotationY(Math.PI/2), m4.translation(lEyeC))
         var TrEye = times(m4.rotationY(Math.PI/2), m4.translation(rEyeC))
-        context.strokeStyle = "black"
+        context.strokeStyle = "rgb(208, 46, 50)"
         drawLimb(2, 10, 10, times(times(TlEye, Tmodel_to_world), Tworld_to_view))
         drawLimb(2, 10, 10, times(times(TrEye, Tmodel_to_world), Tworld_to_view))
 
@@ -435,8 +435,8 @@ function Vileplume(){"use strict"
     function drawFrontFace(Tx){
         // Add A B buttons
         context.setLineDash([1, 0])
-        context.strokeStyle = "rgb(252, 99, 94)"
-        context.fillStyle = "rgb(252, 99, 94)"
+        context.strokeStyle = "black"
+        context.fillStyle = "rgb(177, 53, 103)"
         drawCircle(60, -20, 0, 10, 10, 10, 0, Tx)
         drawCircle(30, -50, 0, 10, 10, 10, 0, Tx)
         
@@ -460,7 +460,7 @@ function Vileplume(){"use strict"
         lineToTx(80, 180, 0, Tx); lineToTx(-80, 180, 0, Tx)
         lineToTx(-80, 20, 0, Tx)
         context.stroke()
-        context.fillStyle = "rgb(224, 255, 234)"
+        context.fillStyle = "rgb(193, 214, 186)"
         context.fill()
         context.closePath
     }
@@ -471,6 +471,11 @@ function Vileplume(){"use strict"
         canvas.width = canvas.width;
         var angle3 = slider2.value * 0.01 * Math.PI
         var angle4 = slider3.value * 0.01 * Math.PI
+
+        // Fix vileplume position in gameboy view
+        if (checkbox1.checked == false){
+            angle1 = 0
+        }
 
         // Basis of our world coordinate
         var axis = [1,1,1]
