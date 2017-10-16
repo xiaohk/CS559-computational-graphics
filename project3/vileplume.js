@@ -13,7 +13,7 @@ function Vileplume(){"use strict"
 
     var angle1 = Math.PI/2
     var angle2 = 0
-
+    
     // Move object to the center
     var offsetX = 250
     var offsetY = 300
