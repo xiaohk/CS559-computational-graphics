@@ -2,26 +2,86 @@ function Die(){"use strict"
     var canvas = document.getElementById('myCanvas')
     var context = canvas.getContext('2d')
     var m4 = twgl.m4
+    var v3 = twgl.v3
     var slider1 = document.getElementById('slider1')
     slider1.value = 0 
     var slider2 = document.getElementById('slider2')
-    slider2.value = 40
+    slider2.value = 0 
     var slider3 = document.getElementById('slider3')
     slider3.value = 0
     var slider4 = document.getElementById('slider4')
     slider4.value = 300
 
     var angle1 = Math.PI/2
-    var angle2 = 0
+    var angle2 = 0 
 
     // Move object to the center
     var offsetX = 250
     var offsetY = 250
+    var usePerspective = checkbox1.checked
 
     // Triangle containers
     var triangles = []
 
-    var usePerspective = checkbox1.checked
+    // Color variables
+    var light = v3.normalize([-1,-1,-1])
+    var dieColor = [240, 60, 90]
+    var topColor = [192, 192, 192]
+    var dieColorString = colorToString(dieColor)
+    var topColorString = colorToString(topColor)
+
+    // Helper function to write color in string (RGB)
+    function colorToString(color){
+        return "rgb(" + Math.floor(color[0]) + "," + 
+                        Math.floor(color[1]) + "," + 
+                        Math.floor(color[2]) + ")"
+    }
+
+    function stringToColor(color){
+        // Use regular expression here
+        var reg = /^rgb\((\d+),(\d+),(\d+)\)/
+        var result = reg.exec(color)
+        if (result == null){
+            console.log(color)
+        }
+        return [Math.floor(result[1]), Math.floor(result[2]),
+                Math.floor(result[3])]
+    }
+
+    // Implementation of merge sort
+    function mergeSort (arr) {
+        if (arr.length === 1) {
+            // return once we hit an array with a single item
+            return arr
+        }
+
+        const middle = Math.floor(arr.length / 2)
+        const left = arr.slice(0, middle) 
+        const right = arr.slice(middle)
+
+        return merge(
+            mergeSort(left),
+            mergeSort(right)
+        )
+    }
+
+    // Merge from bottom to top
+    function merge (left, right) {
+        let result = []
+        let indexLeft = 0
+        let indexRight = 0
+
+        while (indexLeft < left.length && indexRight < right.length) {
+            if (left[indexLeft] < right[indexRight]) {
+            result.push(left[indexLeft])
+            indexLeft++
+            } else {
+                result.push(right[indexRight])
+                indexRight++
+            }
+        }
+        return result.concat(left.slice(indexLeft)).concat(right.slice(indexRight))
+    }
 
     // Helper function to call m4.multiply()
     function times(m1, m2){
@@ -50,11 +110,13 @@ function Die(){"use strict"
     function drawTriangle(triangle,Tx){
         context.beginPath()
         context.fillStyle = triangle[3]
+        context.strokeStyle = triangle[3]
         moveToTx(triangle[0][0], triangle[0][1], triangle[0][2],Tx)
         lineToTx(triangle[1][0], triangle[1][1], triangle[1][2],Tx)
         lineToTx(triangle[2][0], triangle[2][1], triangle[2][2],Tx)
         context.closePath()
         context.fill()
+        context.stroke()
     }
 
     // Draw the axes
@@ -84,10 +146,154 @@ function Die(){"use strict"
 
     // Add triangles into var triangles
     function initGeometry(){
+        // Front
         triangles.push([[100,100,100],[100,100,300],[100,300,300],"red",0.0])
         triangles.push([[100,100,100],[100,300,300],[100,300,100],"blue",0.0])
+        // Back
         triangles.push([[300,100,100],[300,100,300],[300,300,300],"green",0.0])
         triangles.push([[300,100,100],[300,300,300],[300,300,100],"purple",0.0])
+        // Top
+        triangles.push([[100,300,100],[300,300,100],[100,300,300],"black",0.0])
+        triangles.push([[100,300,300],[300,300,100],[300,300,300],"yellow",0.0])
+        // Bottom
+        triangles.push([[100,100,100],[300,100,100],[100,100,300],"orange",0.0])
+        triangles.push([[100,100,300],[300,100,100],[300,100,300],"pink",0.0])
+        // Left
+        triangles.push([[100,100,300],[100,300,300],[300,300,300],"coral",0.0])
+        triangles.push([[100,100,300],[300,100,300],[300,300,300],"aquamarine",0.0])
+        // Right
+        triangles.push([[100,100,100],[100,300,100],[300,300,100],"coral",0.0])
+        triangles.push([[100,100,100],[300,100,100],[300,300,100],"aquamarine",0.0])
+    }
+
+    // Add triangles for a cube based on the center point and length
+    function addCube(center, length, color){
+        var baseX = center[0] - length / 2
+        var baseY = center[1] - length / 2
+        var baseZ = center[2] - length / 2
+        // Front
+        triangles.push([[baseX,baseY,baseZ],
+                        [baseX,baseY+length,baseZ+length],
+                        [baseX,baseY,baseZ+length], color,0.0])
+        triangles.push([[baseX,baseY,baseZ],
+                        [baseX,baseY+length,baseZ],
+                        [baseX,baseY+length,baseZ+length], color,0.0])
+        // Back
+        triangles.push([[baseX+length,baseY,baseZ],
+                        [baseX+length,baseY,baseZ+length],
+                        [baseX+length,baseY+length,baseZ+length],color,0.0])
+        triangles.push([[baseX+length,baseY,baseZ],
+                        [baseX+length,baseY+length,baseZ+length],
+                        [baseX+length,baseY+length,baseZ],color,0.0])
+        // Top
+        triangles.push([[baseX,baseY+length,baseZ],[baseX+length,baseY+length,baseZ],
+                        [baseX,baseY+length,baseZ+length],color,0.0])
+        triangles.push([[baseX,baseY+length,baseZ+length],
+                        [baseX+length,baseY+length,baseZ],
+                        [baseX+length,baseY+length,baseZ+length],color,0.0])
+        // Bottom
+        triangles.push([[baseX,baseY,baseZ],
+                        [baseX,baseY,baseZ+length],
+                        [baseX+length,baseY,baseZ], color,0.0])
+        triangles.push([[baseX,baseY,baseZ+length],
+                        [baseX+length,baseY,baseZ+length],
+                        [baseX+length,baseY,baseZ], color,0.0])
+        // Left
+        triangles.push([[baseX,baseY,baseZ+length],
+                        [baseX,baseY+length,baseZ+length],
+                        [baseX+length,baseY+length,baseZ+length],color,0.0])
+        triangles.push([[baseX,baseY,baseZ+length],
+                        [baseX+length,baseY+length,baseZ+length],
+                        [baseX+length,baseY,baseZ+length],color,0.0])
+        // Right
+        triangles.push([[baseX,baseY,baseZ],
+                        [baseX+length,baseY+length,baseZ],
+                        [baseX,baseY+length,baseZ], color,0.0])
+        triangles.push([[baseX,baseY,baseZ],[baseX+length,baseY,baseZ],
+                        [baseX+length,baseY+length,baseZ],color,0.0])
+
+    }
+
+    // Get the triangle bottom points
+    function getCircleBottomPoints(center, radius, numOfPoints){
+        // Center information
+        var xt = center[0], yt = center[1], zt = center[2]
+        var xb = radius, yb = 0, zb = radius
+        var theta = Math.PI / 2
+        var phi = 0
+
+        var location = []
+        var points = []
+
+        phi = 0
+        for (phi = (1/(numOfPoints/2)) * Math.PI; phi <= 2 * Math.PI;
+             phi += (1/(numOfPoints/2)) * Math.PI){
+            location = [xt + xb * Math.sin(theta) * Math.cos(phi),
+                        yt + yb * Math.cos(theta),
+                        zt + zb * Math.sin(theta) * Math.sin(phi)]
+            points.push(location)
+        }
+        return points
+    }
+
+    function addTop(top){
+        var points = getCircleBottomPoints([0,100,0], 100, 16)
+        // Stop before the last one
+        for(var i = 0; i < points.length - 1; i++){
+            triangles.push([top, points[i], points[i+1], topColorString, 0.0])
+        }
+        // Add the last one to close the plane
+        triangles.push([top, points[points.length-1], points[0],
+                       topColorString, 0.0])
+    }
+
+    // Add shader to each triangles
+    function addShader(Tx, ambient, diffuse){
+        for(var i = 0; i < triangles.length; i++){
+            // Make two triangles on the same plane of a cube slightly different
+            var localDiffuse
+            if (i % 2 == 0){
+                localDiffuse = diffuse 
+            } else {
+                localDiffuse = diffuse
+            }
+            var cur = triangles[i]
+            var color = stringToColor(cur[3])
+            // Compute ambient color
+            var aColor = v3.mulScalar(color, ambient)
+            // Compute diffuse color
+            var trans = [m4.transformPoint(Tx, cur[0]),
+                         m4.transformPoint(Tx, cur[1]),
+                         m4.transformPoint(Tx, cur[2])]
+            var norm = v3.normalize(v3.cross(v3.subtract(trans[1], trans[0]),
+                                             v3.subtract(trans[2], trans[0])))
+            var dColor = v3.mulScalar(color, localDiffuse * 
+                                      (0.5 * (1 + v3.dot(norm, light))))
+            triangles[i][3] = colorToString(v3.add(aColor, dColor))
+            console.log(triangles[i][3])
+        }
+    }
+
+    // Encode triangles into their distance
+    function encodeTriangle(Tmodel_to_camera){
+        for(var i = 0; i < triangles.length; i++){
+            // Compute the middle point of a triangle
+            var cur = triangles[i]
+            var mid = [(cur[0][0] + cur[1][0] + cur[2][0]) / 3,
+                       (cur[0][1] + cur[1][1] + cur[2][1]) / 3,
+                       (cur[0][2] + cur[1][2] + cur[2][2]) / 3]
+            // Transfer the mid from model to camera
+            var mid_camera = m4.transformPoint(Tmodel_to_camera, mid)
+            // Record the z value
+            cur[4] = mid_camera[2]
+        }
+    }
+
+    // Sort triangles in the var trainalge
+    function sortGeometry(){
+        triangles.sort(function(t1, t2){
+            return t1[4] - t2[4]
+        })
     }
 
     // Draw the triangles in the var triangle
@@ -101,10 +307,11 @@ function Die(){"use strict"
         // Clear the canvas
         canvas.width = canvas.width
         var angle1 = slider1.value * 0.01 * Math.PI
+        var angle2 = slider2.value * 0.01 * Math.PI
 
         // Basis of the world coordinate
-        var axis = [1,1,1]
-        var eye = [500 * Math.cos(angle1), 200, 500 * Math.sin(angle1)]
+        var axis = [0,1,0]
+        var eye = [700 * Math.cos(angle1), 400, 700 * Math.sin(angle1)]
         var target = [0,0,0]
         var up = [0,1,0]
 
@@ -127,8 +334,8 @@ function Die(){"use strict"
                 -zooming, zooming, -2, 2)
         }
         */
-        // var Tprojection = m4.perspective(Math.PI/3, 1, 5, 400)
-        var Tprojection=m4.ortho(-400, 400, -400, 400, -2, 2);
+        var Tprojection = m4.perspective(Math.PI/3, 1, 1, 400)
+        // var Tprojection=m4.ortho(-400, 400, -400, 400, -2, 2);
 
         // Viewport transformations
         var Tviewport = m4.multiply(m4.scaling([200,-200,200]),
@@ -141,8 +348,17 @@ function Die(){"use strict"
 
         // Actually drawing
         drawAxes(Tworld_to_view)
-        initGeometry()
+        //initGeometry()
+        //addCube([0,0,0], 200, dieColorString)
+        addTop([0,400,0])
+        addShader(Tmodel_to_camera, 0.1, 0.9)
+        encodeTriangle(Tmodel_to_camera)
+        sortGeometry()
         drawGeometry(Tmodel_to_view)
+        //drawAxes(Tworld_to_view)
+        //getCircleBottomPoints(Tmodel_to_view)
+        
+        //drawGeometry(Tmodel_to_view)
     }
 
     slider1.addEventListener("input",drawDie)
