@@ -8,7 +8,7 @@ function Die(){"use strict"
     var slider2 = document.getElementById('slider2')
     slider2.value = 0 
     var slider3 = document.getElementById('slider3')
-    slider3.value = 0
+    slider3.value = 400 
     var slider4 = document.getElementById('slider4')
     slider4.value = 300
 
@@ -27,8 +27,10 @@ function Die(){"use strict"
     var light = v3.normalize([0,-1,-1])
     var dieColor = [240, 60, 90]
     var topColor = [192, 192, 192]
+    var circleColor = [203, 203, 203]
     var dieColorString = colorToString(dieColor)
     var topColorString = colorToString(topColor)
+    var circleColorString = colorToString(circleColor)
 
     // Helper function to write color in string (RGB)
     function colorToString(color){
@@ -188,51 +190,121 @@ function Die(){"use strict"
     }
 
     // Add triangles for a cube based on the center point and length
-    function addCube(center, length, color){
+    function addCube(center, length, color, encode, Tx){
         var baseX = center[0] - length / 2
         var baseY = center[1] - length / 2
         var baseZ = center[2] - length / 2
+        var localTriangles = []
         // Front
-        triangles.push([[baseX,baseY,baseZ],
+        localTriangles.push([[baseX,baseY,baseZ],
                         [baseX,baseY+length,baseZ+length],
-                        [baseX,baseY,baseZ+length], color,0.0])
-        triangles.push([[baseX,baseY,baseZ],
+                        [baseX,baseY,baseZ+length], color, 0.0, 1])
+        localTriangles.push([[baseX,baseY,baseZ],
                         [baseX,baseY+length,baseZ],
-                        [baseX,baseY+length,baseZ+length], color,0.0])
+                        [baseX,baseY+length,baseZ+length], color, 0.0, 1])
         // Back
-        triangles.push([[baseX+length,baseY,baseZ],
+        localTriangles.push([[baseX+length,baseY,baseZ],
                         [baseX+length,baseY,baseZ+length],
-                        [baseX+length,baseY+length,baseZ+length],color,0.0])
-        triangles.push([[baseX+length,baseY,baseZ],
+                        [baseX+length,baseY+length,baseZ+length],color,0.0, 1])
+        localTriangles.push([[baseX+length,baseY,baseZ],
                         [baseX+length,baseY+length,baseZ+length],
-                        [baseX+length,baseY+length,baseZ],color,0.0])
+                        [baseX+length,baseY+length,baseZ],color,0.0, 1])
         // Top
-        triangles.push([[baseX,baseY+length,baseZ],[baseX+length,baseY+length,baseZ],
-                        [baseX,baseY+length,baseZ+length],color,0.0])
-        triangles.push([[baseX,baseY+length,baseZ+length],
+        localTriangles.push([[baseX,baseY+length,baseZ],
                         [baseX+length,baseY+length,baseZ],
-                        [baseX+length,baseY+length,baseZ+length],color,0.0])
+                        [baseX,baseY+length,baseZ+length],color,0.0, 1])
+        localTriangles.push([[baseX,baseY+length,baseZ+length],
+                        [baseX+length,baseY+length,baseZ],
+                        [baseX+length,baseY+length,baseZ+length],color,0.0, 1])
         // Bottom
-        triangles.push([[baseX,baseY,baseZ],
+        localTriangles.push([[baseX,baseY,baseZ],
                         [baseX,baseY,baseZ+length],
-                        [baseX+length,baseY,baseZ], color,0.0])
-        triangles.push([[baseX,baseY,baseZ+length],
+                        [baseX+length,baseY,baseZ], color,0.0, 1])
+        localTriangles.push([[baseX,baseY,baseZ+length],
                         [baseX+length,baseY,baseZ+length],
-                        [baseX+length,baseY,baseZ], color,0.0])
+                        [baseX+length,baseY,baseZ], color,0.0, 1])
         // Left
-        triangles.push([[baseX,baseY,baseZ+length],
+        localTriangles.push([[baseX,baseY,baseZ+length],
                         [baseX,baseY+length,baseZ+length],
-                        [baseX+length,baseY+length,baseZ+length],color,0.0])
-        triangles.push([[baseX,baseY,baseZ+length],
+                        [baseX+length,baseY+length,baseZ+length],color,0.0, 1])
+        localTriangles.push([[baseX,baseY,baseZ+length],
                         [baseX+length,baseY+length,baseZ+length],
-                        [baseX+length,baseY,baseZ+length],color,0.0])
+                        [baseX+length,baseY,baseZ+length],color,0.0, 1])
         // Right
-        triangles.push([[baseX,baseY,baseZ],
+        localTriangles.push([[baseX,baseY,baseZ],
                         [baseX+length,baseY+length,baseZ],
-                        [baseX,baseY+length,baseZ], color,0.0])
-        triangles.push([[baseX,baseY,baseZ],[baseX+length,baseY,baseZ],
-                        [baseX+length,baseY+length,baseZ],color,0.0])
+                        [baseX,baseY+length,baseZ], color,0.0, 1])
+        localTriangles.push([[baseX,baseY,baseZ],[baseX+length,baseY,baseZ],
+                        [baseX+length,baseY+length,baseZ],color,0.0, 1])
 
+        // Encode those local triangles
+        encode(Tx, localTriangles)
+        // Push local triangles into global triangles
+        for(var i = 0; i < localTriangles.length; i++){
+            triangles.push(localTriangles[i])
+        }
+
+        // Add circles on each plane
+        var centers = 
+        [[[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length*1/3,baseY+length*2/10,baseZ+length], m4.rotationX(Math.PI/2)],
+        [[baseX+length*1/3,baseY+length*5/10,baseZ+length], m4.rotationX(Math.PI/2)],
+        [[baseX+length*1/3,baseY+length*8/10,baseZ+length], m4.rotationX(Math.PI/2)],
+        [[baseX+length*2/3,baseY+length*2/10,baseZ+length], m4.rotationX(Math.PI/2)],
+        [[baseX+length*2/3,baseY+length*5/10,baseZ+length], m4.rotationX(Math.PI/2)],
+        [[baseX+length*2/3,baseY+length*8/10,baseZ+length], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
+        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)]]
+        // Front
+        /*
+        var center = [baseX+length/2,baseY+length/2,baseZ]
+        addDieCircle(center, 20, 16, encodeDieCircle, circleColorString,
+                  Tx, m4.rotationX(Math.PI/2))
+        // Back
+        center = [baseX+length/2,baseY+length/2,baseZ+length]
+        addDieCircle(center, 20, 16, encodeDieCircle, circleColorString,
+                  Tx, m4.rotationX(Math.PI/2))
+        */
+        for(var i = 0; i < centers.length; i++){
+            addDieCircle(centers[i][0], 20, 16, encodeDieCircle, circleColorString,
+                  Tx, centers[i][1])
+        }
+
+    }
+
+    // Add triangles to draw a circle
+    function addDieCircle(center, radius, num, encoder, color, Tx_encode, Tx_rotate){
+        var Tlocal_to_die = times(Tx_rotate, m4.translation(center))
+        var points = getCircleBottomPoints([0,0,0], radius, num)
+        var localTriangles = []
+        for(var i = 0; i < points.length - 1; i++){
+            localTriangles.push([
+                m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                m4.transformPoint(Tlocal_to_die, points[i],),
+                m4.transformPoint(Tlocal_to_die, points[i+1]),
+                color, 0.0, 1])
+        }
+        // Add the last one to close the plane
+        localTriangles.push([
+                m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                m4.transformPoint(Tlocal_to_die, points[points.length-1],),
+                m4.transformPoint(Tlocal_to_die, points[0]),
+                color, 0.0, 1])
+
+        // Encode the triangles
+        encoder(Tx_encode, localTriangles)
+        // Push local triangles into global triangles
+        for(var i = 0; i < localTriangles.length; i++){
+            triangles.push(localTriangles[i])
+        }
     }
 
     // Get the triangle bottom points
@@ -262,41 +334,77 @@ function Die(){"use strict"
 
     // Add pointers for the tapers on the top
     // The order of drawing triangles matters
-    function addTop(top, center, radius, num, encoder, Tx){
+    function addTop(top, center, radius, num, encoder, Tx, color1, color2){
         var points = getCircleBottomPoints(center, radius, num)
         var localTriangles = []
+        var curColor
         // Stop before the last one
         for(var i = 0; i < points.length - 1; i++){
-            localTriangles.push([top, points[i], points[i+1], topColorString, 0.0])
+            if ((i) % 2 == 0){
+                curColor = color2
+            } else {
+                curColor = color1
+            }
+            localTriangles.push([top, points[i], points[i+1], curColor, 0.0, 0])
         }
         // Add the last one to close the plane
         localTriangles.push([top, points[points.length-1], points[0],
-                             topColorString, 0.0])
+                             color1, 0.0, 0])
         // Encode those triangles
         encoder(Tx, localTriangles)
         // Push local triangles into global triangles
-        //for(var i = 0; i < localTriangles.length; i++){
-        //    triangles.push(localTriangles[i])
-        //}
-        return localTriangles
+        for(var i = 0; i < localTriangles.length; i++){
+            triangles.push(localTriangles[i])
+        }
     }
 
     // Add triangles for the tapers on the bottom
     // The order of drawing triangles matters
     function addBottom(top, center, radius, num, encoder, Tx){
         var points = getCircleBottomPoints(center, radius, num)
-        var triangle
+        var localTriangles = []
         // Stop before the last one
         for(var i = 0; i < points.length - 1; i++){
-            triangles.push([top, points[i+1], points[i], topColorString, 0.0])
+            localTriangles.push([top, points[i+1], points[i], topColorString, 0.0, 0])
         }
         // Add the last one to close the plane
-        triangles.push([top, points[0], points[points.length-1],
-                       topColorString, 0.0])
+        localTriangles.push([top, points[0], points[points.length-1],
+                       topColorString, 0.0, 0])
+        // Encode those triangles
+        encoder(Tx, localTriangles)
+        // Push local triangles into global triangles
+        for(var i = 0; i < localTriangles.length; i++){
+            triangles.push(localTriangles[i])
+        }
+    }
+
+    // Add triangles to draw a circle
+    function addCircle(center, radius, num, encoder, Tx, color1, color2){
+        var points = getCircleBottomPoints(center, radius, num)
+        var localTriangles = []
+        var curColor
+        for(var i = 0; i < points.length - 1; i++){
+            if ((i) % 2 == 0){
+                curColor = color2
+            } else {
+                curColor = color1
+            }
+
+            localTriangles.push([center, points[i], points[i+1], curColor, 0.0, 0])
+        }
+        // Add the last one to close the plane
+        localTriangles.push([center, points[points.length-1], points[0],
+                             color1, 0.0, 0])
+        // Encode the triangles
+        encoder(Tx, localTriangles)
+        // Push local triangles into global triangles
+        for(var i = 0; i < localTriangles.length; i++){
+            triangles.push(localTriangles[i])
+        }
     }
 
     // Define different triangle encoders for different positions
-    function encodeTopTaper(Tx, triangles){
+    function encodeCenter(Tx, triangles){
         for(var i = 0; i < triangles.length; i++){
             // Compute the middle point of a triangle
             var cur = triangles[i]
@@ -310,7 +418,7 @@ function Die(){"use strict"
         }
     }
 
-    function encodeUpperTaper(Tx, triangles){
+    function encodeFirst(Tx, triangles){
         for(var i = 0; i < triangles.length; i++){
             var cur = triangles[i]
             // Record the z value
@@ -318,44 +426,51 @@ function Die(){"use strict"
         }
     }
 
-    function addSpinTop(Tx){
-        var local = addTop([0,400,0], [0,100,0], 100, 32, encodeTopTaper, Tx)
-        encodeTriangleCenter(Tx, local)
-        var tt = []
-        for(var i = 0; i < local.length; i++){
-            tt.push(local[i])
+    function encodeDieCircle(Tx, triangles){
+        for(var i = 0; i < triangles.length; i++){
+            var cur = triangles[i]
+            var mid = [(cur[1][0] + cur[2][0]) / 2,
+                       (cur[1][1] + cur[2][1]) / 2,
+                       (cur[1][2] + cur[2][2]) / 2]
+            // Transfer the mid from model to camera
+            var mid_camera = m4.transformPoint(Tx, mid)
+            // Add 1 to make the order of circle always higher than the plane
+            cur[4] = mid_camera[2] + 50 
         }
-        console.log(tt)
-        console.log(local)
-        triangles = tt 
-        //triangles = local
-        //addTop([0,150,0], [0,50,0], 300, 32, encodeUpperTaper, Tx)
-        //addBottom([0,-100,0], [0,50,0], 300, 32)
-        //addBottom([0,-450,0], [0,-50,0], 100, 16)
+    }
+
+    function addSpinTop(Tx){
+        addTop([0,400,0], [0,100,0], 100, 32, encodeCenter, Tx,
+               topColorString, topColorString)
+        addTop([0,150,0], [0,50,0], 300, 64, encodeFirst, Tx,
+               topColorString, dieColorString)
+        addCircle([0,50,0], 300, 64, encodeFirst, Tx,
+               topColorString, dieColorString)
+        addBottom([0,-350,0], [0,50,0], 100, 32, encodeCenter, Tx)
     }
 
     // Add shader to each triangles
-    function addShader(Tx, ambient, diffuse){
+    function addShader(Tx0, Tx1, ambient, diffuse){
         for(var i = 0; i < triangles.length; i++){
-            // Make two triangles on the same plane of a cube slightly different
-            var localDiffuse
-            if (i % 2 == 0){
-                localDiffuse = diffuse 
-            } else {
-                localDiffuse = diffuse
-            }
+            // Use different Tx for different triangles space
+            var localTx
             var cur = triangles[i]
+            if (cur[5] == 0){
+                localTx = Tx0
+            } else if (cur[5] == 1){
+                localTx = Tx1
+            }
             var color = stringToColor(cur[3])
             // Compute ambient color
             var aColor = v3.mulScalar(color, ambient)
             // Compute diffuse color
-            var trans = [m4.transformPoint(Tx, cur[0]),
-                         m4.transformPoint(Tx, cur[1]),
-                         m4.transformPoint(Tx, cur[2])]
+            var trans = [m4.transformPoint(localTx, cur[0]),
+                         m4.transformPoint(localTx, cur[1]),
+                         m4.transformPoint(localTx, cur[2])]
             //trans = cur
             var norm = v3.normalize(v3.cross(v3.subtract(trans[1], trans[0]),
                                              v3.subtract(trans[2], trans[0])))
-            var dColor = v3.mulScalar(color, localDiffuse * 
+            var dColor = v3.mulScalar(color, diffuse * 
                                       (0.5 * (1 + v3.dot(norm, light))))
             triangles[i][3] = colorToString(v3.add(aColor, dColor))
         }
@@ -384,9 +499,17 @@ function Die(){"use strict"
     }
 
     // Draw the triangles in the var triangle
-    function drawGeometry(Tx){
+    function drawGeometry(Tx0, Tx1){
+        var localTx
+        var cur
         for(var i = 0; i < triangles.length; i++){
-            drawTriangle(triangles[i], Tx)
+            cur = triangles[i]
+            if (cur[5] == 0){
+                localTx = Tx0
+            } else if (cur[5] == 1){
+                localTx = Tx1
+            }
+            drawTriangle(cur, localTx)
         }
     }
 
@@ -397,17 +520,21 @@ function Die(){"use strict"
         triangles = []
         var angle1 = slider1.value * 0.01 * Math.PI
         var angle2 = slider2.value * 0.01 * Math.PI
+        var angle3 = 0
 
         // Basis of the world coordinate
         var axis = [0,1,0]
-        var eye = [700 * Math.cos(angle1), 400, 700 * Math.sin(angle1)]
+        var eye = [700 * Math.cos(angle1), slider3.value, 700 * Math.sin(angle1)]
         var target = [0,0,0]
         var up = [0,1,0]
 
         // Transformations
         var Tworld_to_camera = m4.inverse(m4.lookAt(eye, target, up))
         var Tmodel_to_world = m4.axisRotation(axis, angle2)
+        var Tdie_to_world = m4.axisRotation([1,1,1], angle3)
         var Tmodel_to_camera = times(Tmodel_to_world, Tworld_to_camera)
+        var Tdie_to_camera = times(Tdie_to_world, Tworld_to_camera)
+        var Tdie_to_model = times(Tdie_to_world, m4.inverse(Tmodel_to_world))
         // var Tprojection
 
         // Doing zooming in different projection mode
@@ -434,21 +561,23 @@ function Die(){"use strict"
                                                      Tprojection),
                                          Tviewport)
         var Tmodel_to_view = m4.multiply(Tmodel_to_world, Tworld_to_view)
+        var Tdie_to_view = times(Tdie_to_world, Tworld_to_view)
 
         // Actually drawing
         
         //initGeometry()
-        //addCube([0,0,0], 200, dieColorString)
-        addSpinTop(Tmodel_to_camera)
+        //addCube([80,-300,200], 100, dieColorString, encodeCenter, Tdie_to_camera)
+        addCube([0,0,0], 200, dieColorString, encodeCenter, Tdie_to_camera)
+        //addSpinTop(Tmodel_to_camera)
         
         // encodeTriangleCenter(Tmodel_to_camera, triangles)
         sortGeometry()
-        addShader(Tmodel_to_world, 0.1, 0.9)
-        drawGeometry(Tmodel_to_view)
+        addShader(Tmodel_to_world, Tdie_to_world, 0.05, 0.95)
+        drawGeometry(Tmodel_to_view, Tdie_to_view)
         //drawNormal(Tmodel_to_view)
         //drawAxes(Tworld_to_view)
         //getCircleBottomPoints(Tmodel_to_view)
-        drawAxes(Tmodel_to_camera) 
+        drawAxes(Tmodel_to_view) 
         //drawGeometry(Tmodel_to_view)
     }
 
