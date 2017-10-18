@@ -262,22 +262,28 @@ function Die(){"use strict"
 
     // Add pointers for the tapers on the top
     // The order of drawing triangles matters
-    function addTop(top, center, radius, num, encoder){
+    function addTop(top, center, radius, num, encoder, Tx){
         var points = getCircleBottomPoints(center, radius, num)
-        var triangle
+        var localTriangles = []
         // Stop before the last one
         for(var i = 0; i < points.length - 1; i++){
-            triangle = [top, points[i], points[i+1], topColorString, 0.0]
-            triangles.push(encoder(triangle))
+            localTriangles.push([top, points[i], points[i+1], topColorString, 0.0])
         }
         // Add the last one to close the plane
-        triangle = [top, points[points.length-1], points[0], topColorString, 0.0]
-        triangles.push(encoder(triangle))
+        localTriangles.push([top, points[points.length-1], points[0],
+                             topColorString, 0.0])
+        // Encode those triangles
+        encoder(Tx, localTriangles)
+        // Push local triangles into global triangles
+        //for(var i = 0; i < localTriangles.length; i++){
+        //    triangles.push(localTriangles[i])
+        //}
+        return localTriangles
     }
 
     // Add triangles for the tapers on the bottom
     // The order of drawing triangles matters
-    function addBottom(top, center, radius, num, encoder){
+    function addBottom(top, center, radius, num, encoder, Tx){
         var points = getCircleBottomPoints(center, radius, num)
         var triangle
         // Stop before the last one
@@ -290,21 +296,40 @@ function Die(){"use strict"
     }
 
     // Define different triangle encoders for different positions
-    function encodeTopTaper(triangle){
-        var points = triangle.slice(0,3)
-        console.log(points)
-        triangle[4] = (triangle[1][2] + triangle[2][2]) / 2
-        return triangle
+    function encodeTopTaper(Tx, triangles){
+        for(var i = 0; i < triangles.length; i++){
+            // Compute the middle point of a triangle
+            var cur = triangles[i]
+            var mid = [(cur[0][0] + cur[1][0] + cur[2][0]) / 3,
+                       (cur[0][1] + cur[1][1] + cur[2][1]) / 3,
+                       (cur[0][2] + cur[1][2] + cur[2][2]) / 3]
+            // Transfer the mid from model to camera
+            var mid_camera = m4.transformPoint(Tx, mid)
+            // Record the z value
+            cur[4] = mid_camera[2]
+        }
     }
 
-    function encodeUpperTaper(triangle){
-        triangle[4] = triangle[0][2]
-        return triangle
+    function encodeUpperTaper(Tx, triangles){
+        for(var i = 0; i < triangles.length; i++){
+            var cur = triangles[i]
+            // Record the z value
+            cur[4] = m4.transformPoint(Tx, cur[0])[2]
+        }
     }
 
-    function addSpinTop(){
-        addTop([0,400,0], [0,100,0], 100, 16, encodeTopTaper)
-        addTop([0,150,0], [0,50,0], 300, 32, encodeUpperTaper)
+    function addSpinTop(Tx){
+        var local = addTop([0,400,0], [0,100,0], 100, 32, encodeTopTaper, Tx)
+        encodeTriangleCenter(Tx, local)
+        var tt = []
+        for(var i = 0; i < local.length; i++){
+            tt.push(local[i])
+        }
+        console.log(tt)
+        console.log(local)
+        triangles = tt 
+        //triangles = local
+        //addTop([0,150,0], [0,50,0], 300, 32, encodeUpperTaper, Tx)
         //addBottom([0,-100,0], [0,50,0], 300, 32)
         //addBottom([0,-450,0], [0,-50,0], 100, 16)
     }
@@ -333,15 +358,14 @@ function Die(){"use strict"
             var dColor = v3.mulScalar(color, localDiffuse * 
                                       (0.5 * (1 + v3.dot(norm, light))))
             triangles[i][3] = colorToString(v3.add(aColor, dColor))
-            //console.log(triangles[i][3])
         }
     }
 
     // Encode triangles into their distance
-    function encodeTriangleCube(Tmodel_to_camera){
-        for(var i = 0; i < triangles.length; i++){
+    function encodeTriangleCenter(Tmodel_to_camera, localTriangles){
+        for(var i = 0; i < localTriangles.length; i++){
             // Compute the middle point of a triangle
-            var cur = triangles[i]
+            var cur = localTriangles[i]
             var mid = [(cur[0][0] + cur[1][0] + cur[2][0]) / 3,
                        (cur[0][1] + cur[1][1] + cur[2][1]) / 3,
                        (cur[0][2] + cur[1][2] + cur[2][2]) / 3]
@@ -369,6 +393,8 @@ function Die(){"use strict"
     function drawDie(){
         // Clear the canvas
         canvas.width = canvas.width
+        // Super super important! Init your triangles!!!
+        triangles = []
         var angle1 = slider1.value * 0.01 * Math.PI
         var angle2 = slider2.value * 0.01 * Math.PI
 
@@ -413,15 +439,16 @@ function Die(){"use strict"
         
         //initGeometry()
         //addCube([0,0,0], 200, dieColorString)
-        addSpinTop()
-        addShader(Tmodel_to_world, 0.1, 0.9)
-        //encodeTriangleCube(Tmodel_to_camera)
+        addSpinTop(Tmodel_to_camera)
+        
+        // encodeTriangleCenter(Tmodel_to_camera, triangles)
         sortGeometry()
+        addShader(Tmodel_to_world, 0.1, 0.9)
         drawGeometry(Tmodel_to_view)
         //drawNormal(Tmodel_to_view)
         //drawAxes(Tworld_to_view)
         //getCircleBottomPoints(Tmodel_to_view)
-        drawAxes(Tworld_to_view) 
+        drawAxes(Tmodel_to_camera) 
         //drawGeometry(Tmodel_to_view)
     }
 
