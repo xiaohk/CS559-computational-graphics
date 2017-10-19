@@ -6,14 +6,23 @@ function Die(){"use strict"
     var slider1 = document.getElementById('slider1')
     slider1.value = 0 
     var slider2 = document.getElementById('slider2')
-    slider2.value = 0 
+    slider2.value = 1 
     var slider3 = document.getElementById('slider3')
     slider3.value = 400 
     var slider4 = document.getElementById('slider4')
-    slider4.value = 300
+    slider4.value = -71 
+    var slider5 = document.getElementById('slider5')
+    slider5.value = 0
+
+    var dieView = checkbox1.checked
+    var simulateTime = checkbox2.checked
 
     var angle1 = Math.PI/2
     var angle2 = 0 
+    var angle3 = 20 * 0.01 * slider4.value 
+    var angle4 = 0 
+    var fpsInterval, now, last
+    var speed = 1
 
     // Move object to the center
     var offsetX = 250
@@ -24,7 +33,7 @@ function Die(){"use strict"
     var triangles = []
 
     // Color variables
-    var light = v3.normalize([0,-1,-1])
+    var light = v3.normalize([0,0,-1])
     var dieColor = [240, 60, 90]
     var topColor = [192, 192, 192]
     var circleColor = [203, 203, 203]
@@ -48,41 +57,6 @@ function Die(){"use strict"
         }
         return [Math.floor(result[1]), Math.floor(result[2]),
                 Math.floor(result[3])]
-    }
-
-    // Implementation of merge sort
-    function mergeSort (arr) {
-        if (arr.length === 1) {
-            // return once we hit an array with a single item
-            return arr
-        }
-
-        const middle = Math.floor(arr.length / 2)
-        const left = arr.slice(0, middle) 
-        const right = arr.slice(middle)
-
-        return merge(
-            mergeSort(left),
-            mergeSort(right)
-        )
-    }
-
-    // Merge from bottom to top
-    function merge (left, right) {
-        let result = []
-        let indexLeft = 0
-        let indexRight = 0
-
-        while (indexLeft < left.length && indexRight < right.length) {
-            if (left[indexLeft] < right[indexRight]) {
-            result.push(left[indexLeft])
-            indexLeft++
-            } else {
-                result.push(right[indexRight])
-                indexRight++
-            }
-        }
-        return result.concat(left.slice(indexLeft)).concat(right.slice(indexRight))
     }
 
     // Helper function to call m4.multiply()
@@ -167,28 +141,6 @@ function Die(){"use strict"
         context.closePath()
     }
 
-    // Add triangles into var triangles
-    function initGeometry(){
-        // Front
-        triangles.push([[100,100,100],[100,100,300],[100,300,300],"red",0.0])
-        triangles.push([[100,100,100],[100,300,300],[100,300,100],"blue",0.0])
-        // Back
-        triangles.push([[300,100,100],[300,100,300],[300,300,300],"green",0.0])
-        triangles.push([[300,100,100],[300,300,300],[300,300,100],"purple",0.0])
-        // Top
-        triangles.push([[100,300,100],[300,300,100],[100,300,300],"black",0.0])
-        triangles.push([[100,300,300],[300,300,100],[300,300,300],"yellow",0.0])
-        // Bottom
-        triangles.push([[100,100,100],[300,100,100],[100,100,300],"orange",0.0])
-        triangles.push([[100,100,300],[300,100,100],[300,100,300],"pink",0.0])
-        // Left
-        triangles.push([[100,100,300],[100,300,300],[300,300,300],"coral",0.0])
-        triangles.push([[100,100,300],[300,100,300],[300,300,300],"aquamarine",0.0])
-        // Right
-        triangles.push([[100,100,100],[100,300,100],[300,300,100],"coral",0.0])
-        triangles.push([[100,100,100],[300,100,100],[300,300,100],"aquamarine",0.0])
-    }
-
     // Add triangles for a cube based on the center point and length
     function addCube(center, length, color, encode, Tx){
         var baseX = center[0] - length / 2
@@ -246,61 +198,80 @@ function Die(){"use strict"
 
         // Add circles on each plane
         var centers = 
-        [[[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length*1/3,baseY+length*2/10,baseZ+length], m4.rotationX(Math.PI/2)],
-        [[baseX+length*1/3,baseY+length*5/10,baseZ+length], m4.rotationX(Math.PI/2)],
-        [[baseX+length*1/3,baseY+length*8/10,baseZ+length], m4.rotationX(Math.PI/2)],
-        [[baseX+length*2/3,baseY+length*2/10,baseZ+length], m4.rotationX(Math.PI/2)],
-        [[baseX+length*2/3,baseY+length*5/10,baseZ+length], m4.rotationX(Math.PI/2)],
-        [[baseX+length*2/3,baseY+length*8/10,baseZ+length], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)],
-        [[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2)]]
-        // Front
-        /*
-        var center = [baseX+length/2,baseY+length/2,baseZ]
-        addDieCircle(center, 20, 16, encodeDieCircle, circleColorString,
-                  Tx, m4.rotationX(Math.PI/2))
-        // Back
-        center = [baseX+length/2,baseY+length/2,baseZ+length]
-        addDieCircle(center, 20, 16, encodeDieCircle, circleColorString,
-                  Tx, m4.rotationX(Math.PI/2))
-        */
+        //1
+        [[[baseX+length/2,baseY+length/2,baseZ], m4.rotationX(Math.PI/2),1],
+        //6
+        [[baseX+length*1/3,baseY+length*2/10,baseZ+length], m4.rotationX(Math.PI/2),0],
+        [[baseX+length*1/3,baseY+length*5/10,baseZ+length], m4.rotationX(Math.PI/2),0],
+        [[baseX+length*1/3,baseY+length*8/10,baseZ+length], m4.rotationX(Math.PI/2),0],
+        [[baseX+length*2/3,baseY+length*2/10,baseZ+length], m4.rotationX(Math.PI/2),0],
+        [[baseX+length*2/3,baseY+length*5/10,baseZ+length], m4.rotationX(Math.PI/2),0],
+        [[baseX+length*2/3,baseY+length*8/10,baseZ+length], m4.rotationX(Math.PI/2),0],
+        //2
+        [[baseX+length*3/10,baseY+length,baseZ+length*1/3], m4.rotationY(Math.PI/2),0],
+        [[baseX+length*7/10,baseY+length,baseZ+length*2/3], m4.rotationY(Math.PI/2),0],
+        //5
+        [[baseX+length*3/10,baseY,baseZ+length*3/10], m4.rotationY(Math.PI/2),1],
+        [[baseX+length*7/10,baseY,baseZ+length*7/10], m4.rotationY(Math.PI/2),1],
+        [[baseX+length*3/10,baseY,baseZ+length*7/10], m4.rotationY(Math.PI/2),1],
+        [[baseX+length*7/10,baseY,baseZ+length*3/10], m4.rotationY(Math.PI/2),1],
+        [[baseX+length*5/10,baseY,baseZ+length*5/10], m4.rotationY(Math.PI/2),1],
+        //3
+        [[baseX+length,baseY+length*2/10,baseZ+length*2/10], m4.rotationZ(Math.PI/2),1],
+        [[baseX+length,baseY+length*5/10,baseZ+length*5/10], m4.rotationZ(Math.PI/2),1],
+        [[baseX+length,baseY+length*8/10,baseZ+length*8/10], m4.rotationZ(Math.PI/2),1],
+        //4
+        [[baseX,baseY+length*3/10,baseZ+length*3/10], m4.rotationZ(Math.PI/2),0],
+        [[baseX,baseY+length*7/10,baseZ+length*7/10], m4.rotationZ(Math.PI/2),0],
+        [[baseX,baseY+length*3/10,baseZ+length*7/10], m4.rotationZ(Math.PI/2),0],
+        [[baseX,baseY+length*7/10,baseZ+length*3/10], m4.rotationZ(Math.PI/2),0]
+        ]
         for(var i = 0; i < centers.length; i++){
-            addDieCircle(centers[i][0], 20, 16, encodeDieCircle, circleColorString,
-                  Tx, centers[i][1])
+            addDieCircle(centers[i][0], length/10, 16, encodeDieCircle, circleColorString,
+                  Tx, centers[i][1], centers[i][2])
         }
 
     }
 
     // Add triangles to draw a circle
-    function addDieCircle(center, radius, num, encoder, color, Tx_encode, Tx_rotate){
+    function addDieCircle(center, radius, num, encoder, color, Tx_encode,
+                          Tx_rotate, mode){
         var Tlocal_to_die = times(Tx_rotate, m4.translation(center))
         var points = getCircleBottomPoints([0,0,0], radius, num)
         var localTriangles = []
+
         for(var i = 0; i < points.length - 1; i++){
-            localTriangles.push([
-                m4.transformPoint(Tlocal_to_die, [0,0,0]),
-                m4.transformPoint(Tlocal_to_die, points[i],),
-                m4.transformPoint(Tlocal_to_die, points[i+1]),
-                color, 0.0, 1])
+            if (mode == 0){
+                localTriangles.push([
+                    m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                    m4.transformPoint(Tlocal_to_die, points[i]),
+                    m4.transformPoint(Tlocal_to_die, points[i+1]),
+                    color, 0.0, 1])
+            } else {
+                localTriangles.push([
+                    m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                    m4.transformPoint(Tlocal_to_die, points[i+1]),
+                    m4.transformPoint(Tlocal_to_die, points[i]),
+                    color, 0.0, 1])
+            }
         }
         // Add the last one to close the plane
-        localTriangles.push([
+        if (mode == 0){
+            localTriangles.push([
                 m4.transformPoint(Tlocal_to_die, [0,0,0]),
-                m4.transformPoint(Tlocal_to_die, points[points.length-1],),
+                m4.transformPoint(Tlocal_to_die, points[points.length-1]),
                 m4.transformPoint(Tlocal_to_die, points[0]),
                 color, 0.0, 1])
+        } else {
+            localTriangles.push([
+                m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                m4.transformPoint(Tlocal_to_die, points[0]),
+                m4.transformPoint(Tlocal_to_die, points[points.length-1]),
+                color, 0.0, 1])
+        }
 
         // Encode the triangles
-        encoder(Tx_encode, localTriangles)
+        encoder(Tx_encode, localTriangles, radius)
         // Push local triangles into global triangles
         for(var i = 0; i < localTriangles.length; i++){
             triangles.push(localTriangles[i])
@@ -426,16 +397,10 @@ function Die(){"use strict"
         }
     }
 
-    function encodeDieCircle(Tx, triangles){
+    function encodeDieCircle(Tx, triangles, radius){
         for(var i = 0; i < triangles.length; i++){
             var cur = triangles[i]
-            var mid = [(cur[1][0] + cur[2][0]) / 2,
-                       (cur[1][1] + cur[2][1]) / 2,
-                       (cur[1][2] + cur[2][2]) / 2]
-            // Transfer the mid from model to camera
-            var mid_camera = m4.transformPoint(Tx, mid)
-            // Add 1 to make the order of circle always higher than the plane
-            cur[4] = mid_camera[2] + 50 
+            cur[4] = m4.transformPoint(Tx, cur[0])[2] + radius*2.5
         }
     }
 
@@ -513,14 +478,31 @@ function Die(){"use strict"
         }
     }
 
+    function update(){
+        speed = slider2.value
+        dieView = checkbox1.checked
+        simulateTime = checkbox2.checked
+        angle2 += Math.PI/360 * speed
+        angle3 -= Math.PI/360 * speed
+        if (simulateTime){
+            angle4 += Math.PI/360 * 2
+        }
+    }
+
     function drawDie(){
         // Clear the canvas
         canvas.width = canvas.width
         // Super super important! Init your triangles!!!
         triangles = []
-        var angle1 = slider1.value * 0.01 * Math.PI
-        var angle2 = slider2.value * 0.01 * Math.PI
-        var angle3 = 0
+        angle1 = slider1.value * 0.01 * Math.PI
+        //angle2 = slider2.value * 0.01 * Math.PI
+        //angle3 = slider4.value * 0.01 * Math.PI
+        if (! simulateTime){
+            angle4 = slider5.value * 0.01 * Math.PI
+        }
+        
+        //var preLight = [slider5.value, slider6.value, slider7.value]
+        light = v3.normalize([Math.cos(angle4), Math.sin(angle4), 1])
 
         // Basis of the world coordinate
         var axis = [0,1,0]
@@ -531,27 +513,22 @@ function Die(){"use strict"
         // Transformations
         var Tworld_to_camera = m4.inverse(m4.lookAt(eye, target, up))
         var Tmodel_to_world = m4.axisRotation(axis, angle2)
-        var Tdie_to_world = m4.axisRotation([1,1,1], angle3)
+        var Tdie_to_world
+        if (dieView){
+            Tdie_to_world = times(m4.axisRotation([0,1,0], angle3),
+                                  m4.translation([0,0,0]))
+        } else {
+            Tdie_to_world = times(m4.axisRotation([0,1,0], angle3),
+                                  m4.translation([80,-300,200]))
+        }
         var Tmodel_to_camera = times(Tmodel_to_world, Tworld_to_camera)
         var Tdie_to_camera = times(Tdie_to_world, Tworld_to_camera)
         var Tdie_to_model = times(Tdie_to_world, m4.inverse(Tmodel_to_world))
-        // var Tprojection
-
-        // Doing zooming in different projection mode
-        /*
+        var Tprojection
         var zooming_scale = (slider4.value - slider4.min) /
                                 (slider4.max - slider4.min)
-        if (usePerspective){
-            var zooming = zooming_scale * 6 + 2
-            Tprojection=m4.perspective(Math.PI/zooming, 1, 5, 400)
-        } else {
-            var zooming = (1 - zooming_scale) * 300 + 90
-            Tprojection = m4.ortho(-zooming, zooming, 
-                -zooming, zooming, -2, 2)
-        }
-        */
-        var Tprojection = m4.perspective(Math.PI/3, 1, 1, 400)
-        // var Tprojection=m4.ortho(-400, 400, -400, 400, -2, 2);
+        var zooming = zooming_scale * 6 + 2
+        Tprojection=m4.perspective(Math.PI/zooming, 1, 1, 400)
 
         // Viewport transformations
         var Tviewport = m4.multiply(m4.scaling([200,-200,200]),
@@ -564,32 +541,52 @@ function Die(){"use strict"
         var Tdie_to_view = times(Tdie_to_world, Tworld_to_view)
 
         // Actually drawing
+        if (dieView){
+            addCube([0,0,0], 300, dieColorString, encodeCenter, Tdie_to_camera)
+            sortGeometry()
+            addShader(Tmodel_to_world, Tdie_to_world, 0.05, 0.95)
+            drawGeometry(Tmodel_to_view, Tdie_to_view)
+        } else {
+            addCube([0,0,0], 100, dieColorString, encodeCenter, Tdie_to_camera)
+            addSpinTop(Tmodel_to_camera)
+            sortGeometry()
+            addShader(Tmodel_to_world, Tdie_to_world, 0.05, 0.95)
+            drawGeometry(Tmodel_to_view, Tdie_to_view)
+        }
+        update()
+    }
+
+    // Start animation
+    function startAnimation(fps){
+        fpsInterval = 1000 / fps
+        last = Date.now()
+        animate()
+    }
+
+    // Funciton to call animation and control the FPS
+    function animate(){
+        requestAnimationFrame(animate)
         
-        //initGeometry()
-        //addCube([80,-300,200], 100, dieColorString, encodeCenter, Tdie_to_camera)
-        addCube([0,0,0], 200, dieColorString, encodeCenter, Tdie_to_camera)
-        //addSpinTop(Tmodel_to_camera)
-        
-        // encodeTriangleCenter(Tmodel_to_camera, triangles)
-        sortGeometry()
-        addShader(Tmodel_to_world, Tdie_to_world, 0.05, 0.95)
-        drawGeometry(Tmodel_to_view, Tdie_to_view)
-        //drawNormal(Tmodel_to_view)
-        //drawAxes(Tworld_to_view)
-        //getCircleBottomPoints(Tmodel_to_view)
-        drawAxes(Tmodel_to_view) 
-        //drawGeometry(Tmodel_to_view)
+        // Compare the time interval
+        now = Date.now()
+        if (now - last > fpsInterval){
+            last = now - ((now - last) % fpsInterval)
+            drawDie()    
+        }
     }
 
     slider1.addEventListener("input",drawDie)
     slider2.addEventListener("input",drawDie)
     slider3.addEventListener("input",drawDie)
-    slider3.addEventListener("input",drawDie)
+    slider4.addEventListener("input",drawDie)
+    slider5.addEventListener("input",drawDie)
 
     // Add checkbox listener
     var checkbox_1 = document.querySelector("input[id=checkbox1]");
-    checkbox_1.addEventListener('change', drawDie)
-    drawDie()
+    checkbox_1.addEventListener('change', update)
+    var checkbox_2 = document.querySelector("input[id=checkbox2]");
+    checkbox_2.addEventListener('change', update)
+    startAnimation(30)
 }
 
 window.onload = Die

@@ -5,26 +5,62 @@
 
 </head>
 <body>
-  <h1> Project 4: Roll a Die </h1>
+  <h1> Project 4: Is it a dream? </h1>
   Zijie(Jay) Wang <br>
   zwang688@wisc.edu <br> <br>
     <canvas id="myCanvas" 
 	   width="500" height="500"
 	   style="border:1px solid #000;">
   </canvas><br/>
-  <input id="slider1" type="range" min="-100" max="100" /> 
-  <input id="slider2" type="range" min="-100" max="100" /> 
+  Camera X<input id="slider1" type="range" min="-100" max="100" /> 
+  Camera Y<input id="slider3" type="range" min="-600" max="600" /> 
   <br>
-  <input id="slider3" type="range" min="-600" max="600" /> 
-  <input id="slider4" type="range" min="-600" max="600" /> 
+  Speed <input id="slider2" type="range" min="0" max="10" /> 
+  Zoom<input id="slider4" type="range" min="-100" max="100" /> 
   <br>
-  <input id="checkbox1" type="checkbox" name="perspecviveView" value= "Show"/>
-  Perspective Projection
+  Day Time<input id="slider5" type="range" min="-100" max="100" /> 
+  <br>
+  <input id="checkbox1" type="checkbox" name="diceView" value= "Show"/>
+  Only show dice
+  <br>
+  <input id="checkbox2" type="checkbox" name="simulateTime" value= "Show"/>
+  Simulate Time
   <br>
   <script src="twgl.js/dist/twgl-full.min.js"></script>
   <script src="die.js"></script>
   <!-- <script src="painter.js"></script> -->
 
     <h1> Description </h1>
+
+    <p>
+    In case you don't know, many people have no idea they are just sleeping. Sometimes dream is so real that people think it's reality. <br><br>
+
+    <img src="https://i.imgur.com/IyygvSo.jpg" height="500"/>  <br> 
+    
+  </p> <p>
+    The movie "Inception" has a decent disscussion about what dream is, but many silly people just think it is fictional! <br> <br>
+    In the movie, totems are used to determine whether you are in a dream or not. <br> <br>
+    <img src="https://i.imgur.com/0etepBL.jpg" height="200"/>  
+    <img src="https://i.imgur.com/ETcmTf5.png" height="200"/>  <br> <br>
+    Do you want to test your "reality"? I have made two totems for you. After 5 seconds, you should see the spinning top falls down and you get a "3" on the die. Otherwise, time to wake up! 
+    <br> 
+    </p>
+
+
+    <h1> Implementing comments </h1>
+    <p>
+    The model looks very simple. However, it turns out very complicated to implement, in terms the limitation of "Painter's Algorithm" and using shaders. <br>Especially to write the correct shader, the order to draw triangles matters. It's a pain to figure out the right way to draw each triangle.
+    </p>
+
+
+    <ul>
+    I have used some tricks in the implementation:
+    <li>Use different "encoders" to compute the distance of each triangle in their space. </li>
+    <li>Add dummy z-values to make circles floating on the sirface, even though they are actually "in" the surface.
+    <li>Give a flag to each triangle to tell which space it is in.</li>
+    <li>Use hierarchy model to dynamically add circles onto the die</li>
+    <li>Use an arc "track" to shoot light, to simulate the day time.</li>
+  </ul>
+
 </body>
 </html>
