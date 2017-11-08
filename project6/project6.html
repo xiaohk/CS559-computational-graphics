@@ -1,0 +1,53 @@
+<head>
+<meta name="description" content="[add your bin description]">
+  <meta charset="utf-8">
+  <title>Project 6</title>
+
+    <script id="vs" type="not-js">
+      attribute vec3 vPosition;
+      attribute vec3 vColor;
+      varying vec3 fColor;
+      uniform mat4 uMVP;
+
+      void main(void) {
+        gl_Position = uMVP * vec4(vPosition, 1.0);
+	    fColor = vColor;
+      }
+    </script>
+
+    <script id="fs" type="not-js">
+      precision highp float;
+      varying vec3 fColor;
+
+      void main(void) {
+	     gl_FragColor = vec4(fColor, 1.0);
+      }
+    </script>
+</head>
+<body>
+  <h1> Project 6: Is it a dream, or just OpenGL? </h1>
+  Zijie(Jay) Wang <br>
+  zwang688@wisc.edu <br> <br>
+    <canvas id="myCanvas" 
+	   width="500" height="500"
+	   style="border:1px solid #000;">
+  </canvas><br/>
+  Camera X<input id="slider1" type="range" min="-100" max="100" /> 
+  Camera Y<input id="slider3" type="range" min="-600" max="600" /> 
+  <br>
+  Speed <input id="slider2" type="range" min="0" max="10" /> 
+  Zoom<input id="slider4" type="range" min="-100" max="100" /> 
+  <br>
+  Day Time<input id="slider5" type="range" min="-100" max="100" /> 
+  <br>
+  <input id="checkbox1" type="checkbox" name="diceView" value= "Show"/>
+  Only show dice
+  <br>
+  <input id="checkbox2" type="checkbox" name="simulateTime" value= "Show"/>
+  Simulate Time
+  <br>
+  <script src="twgl.js/dist/twgl-full.min.js"></script>
+  <script src="die.js"></script>
+
+</body>
+</html>
