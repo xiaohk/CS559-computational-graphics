@@ -39,7 +39,7 @@
 		  // Light vectors
 		  vec3 l = normalize(toLight);
 		  vec3 n = normalize(fNormal);
-		  vec3 e = normalize(fPosition);
+		  vec3 e = normalize(-fPosition);
 		  vec3 h = normalize(e+l);
 
 		  // Light colors

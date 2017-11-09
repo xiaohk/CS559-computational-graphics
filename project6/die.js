@@ -22,7 +22,7 @@ function Die() {
     var dieColor = [240/255, 60/255, 90/255]
     var topColor = [192/255, 192/255, 192/255]
     var circleColor = [203/255, 203/255, 203/255]
-    var light = v3.normalize([1,-1,0])
+    var light = v3.normalize([0,-1,0])
     var triangles = []
 
     // Read shader from HTML
@@ -240,6 +240,149 @@ function Die() {
         addBottom([0,-350,0], [0,50,0], 100, 32)
     }
 
+    // Add triangles for a cube based on the center point and length
+    function addCube(center, length, color){
+        var baseX = center[0] - length / 2
+        var baseY = center[1] - length / 2
+        var baseZ = center[2] - length / 2
+        var localTriangles = []
+        // Front
+        localTriangles.push([[baseX,baseY,baseZ],
+                        [baseX,baseY+length,baseZ+length],
+                        [baseX,baseY,baseZ+length], color])
+        localTriangles.push([[baseX,baseY,baseZ],
+                        [baseX,baseY+length,baseZ],
+                        [baseX,baseY+length,baseZ+length], color])
+        // Back
+        localTriangles.push([[baseX+length,baseY,baseZ],
+                        [baseX+length,baseY,baseZ+length],
+                        [baseX+length,baseY+length,baseZ+length],color])
+        localTriangles.push([[baseX+length,baseY,baseZ],
+                        [baseX+length,baseY+length,baseZ+length],
+                        [baseX+length,baseY+length,baseZ],color])
+        // Top
+        localTriangles.push([[baseX,baseY+length,baseZ],
+                        [baseX+length,baseY+length,baseZ],
+                        [baseX,baseY+length,baseZ+length],color])
+        localTriangles.push([[baseX,baseY+length,baseZ+length],
+                        [baseX+length,baseY+length,baseZ],
+                        [baseX+length,baseY+length,baseZ+length],color])
+        // Bottom
+        localTriangles.push([[baseX,baseY,baseZ],
+                        [baseX,baseY,baseZ+length],
+                        [baseX+length,baseY,baseZ], color])
+        localTriangles.push([[baseX,baseY,baseZ+length],
+                        [baseX+length,baseY,baseZ+length],
+                        [baseX+length,baseY,baseZ], color])
+        // Left
+        localTriangles.push([[baseX,baseY,baseZ+length],
+                        [baseX,baseY+length,baseZ+length],
+                        [baseX+length,baseY+length,baseZ+length],color])
+        localTriangles.push([[baseX,baseY,baseZ+length],
+                        [baseX+length,baseY+length,baseZ+length],
+                        [baseX+length,baseY,baseZ+length],color])
+        // Right
+        localTriangles.push([[baseX,baseY,baseZ],
+                        [baseX+length,baseY+length,baseZ],
+                        [baseX,baseY+length,baseZ], color])
+        localTriangles.push([[baseX,baseY,baseZ],[baseX+length,baseY,baseZ],
+                        [baseX+length,baseY+length,baseZ],color])
+
+        // Push local triangles into global triangles
+        for(var i = 0; i < localTriangles.length; i++){
+            triangles.push(localTriangles[i])
+        }
+
+        // Add circles
+        var zf = 0.1
+        var centers = 
+        //1
+        [[[baseX+length/2,baseY+length/2,baseZ-zf], m4.rotationX(Math.PI/2),1],
+        //6
+        [[baseX+length*1/3,baseY+length*2/10,baseZ+zf+length],
+            m4.rotationX(Math.PI/2),0],
+        [[baseX+length*1/3,baseY+length*5/10,baseZ+zf+length],
+            m4.rotationX(Math.PI/2),0],
+        [[baseX+length*1/3,baseY+length*8/10,baseZ+zf+length],
+            m4.rotationX(Math.PI/2),0],
+        [[baseX+length*2/3,baseY+length*2/10,baseZ+zf+length],
+            m4.rotationX(Math.PI/2),0],
+        [[baseX+length*2/3,baseY+length*5/10,baseZ+zf+length],
+            m4.rotationX(Math.PI/2),0],
+        [[baseX+length*2/3,baseY+length*8/10,baseZ+zf+length],
+            m4.rotationX(Math.PI/2),0],
+        //2
+        [[baseX+length*3/10,baseY+length+zf,baseZ+length*1/3], m4.rotationY(Math.PI/2),0],
+        [[baseX+length*7/10,baseY+length+zf,baseZ+length*2/3], m4.rotationY(Math.PI/2),0],
+        //5
+        [[baseX+length*3/10,baseY-zf,baseZ+length*3/10], m4.rotationY(Math.PI/2),1],
+        [[baseX+length*7/10,baseY-zf,baseZ+length*7/10], m4.rotationY(Math.PI/2),1],
+        [[baseX+length*3/10,baseY-zf,baseZ+length*7/10], m4.rotationY(Math.PI/2),1],
+        [[baseX+length*7/10,baseY-zf,baseZ+length*3/10], m4.rotationY(Math.PI/2),1],
+        [[baseX+length*5/10,baseY-zf,baseZ+length*5/10], m4.rotationY(Math.PI/2),1],
+        //3
+        [[baseX+zf+length,baseY+length*2/10,baseZ+length*2/10],
+            m4.rotationZ(Math.PI/2),1],
+        [[baseX+zf+length,baseY+length*5/10,baseZ+length*5/10],
+            m4.rotationZ(Math.PI/2),1],
+        [[baseX+zf+length,baseY+length*8/10,baseZ+length*8/10],
+            m4.rotationZ(Math.PI/2),1],
+        //4
+        [[baseX-zf,baseY+length*3/10,baseZ+length*3/10], m4.rotationZ(Math.PI/2),0],
+        [[baseX-zf,baseY+length*7/10,baseZ+length*7/10], m4.rotationZ(Math.PI/2),0],
+        [[baseX-zf,baseY+length*3/10,baseZ+length*7/10], m4.rotationZ(Math.PI/2),0],
+        [[baseX-zf,baseY+length*7/10,baseZ+length*3/10], m4.rotationZ(Math.PI/2),0]
+        ]
+
+        for(var i = 0; i < centers.length; i++){
+            addDieCircle(centers[i][0], length/10, 16, circleColor,
+                centers[i][1], centers[i][2], 0.1)
+        }
+    }
+
+    // Add triangles to draw a circle
+    function addDieCircle(center, radius, num, color, Tx_rotate, mode, zf){
+        var Tlocal_to_die = times(Tx_rotate, m4.translation(center))
+        var points = getCircleBottomPoints([0,0,0], radius, num)
+        var localTriangles = []
+
+        for(var i = 0; i < points.length - 1; i++){
+            if (mode == 0){
+                localTriangles.push([
+                    m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                    m4.transformPoint(Tlocal_to_die, points[i]),
+                    m4.transformPoint(Tlocal_to_die, points[i+1]),
+                    color])
+            } else {
+                localTriangles.push([
+                    m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                    m4.transformPoint(Tlocal_to_die, points[i+1]),
+                    m4.transformPoint(Tlocal_to_die, points[i]),
+                    color])
+            }
+        }
+        // Add the last one to close the plane
+        if (mode == 0){
+            localTriangles.push([
+                m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                m4.transformPoint(Tlocal_to_die, points[points.length-1]),
+                m4.transformPoint(Tlocal_to_die, points[0]),
+                color])
+        } else {
+            localTriangles.push([
+                m4.transformPoint(Tlocal_to_die, [0,0,0]),
+                m4.transformPoint(Tlocal_to_die, points[0]),
+                m4.transformPoint(Tlocal_to_die, points[points.length-1]),
+                color])
+        }
+
+        // Push local triangles into global triangles
+        for(var i = 0; i < localTriangles.length; i++){
+            triangles.push(localTriangles[i])
+        }
+    }
+
+
     // A function to convert an array of triangles into an array of vertexes,
     // and an array of color information, it also computes the normal for 
     // each triangle in the given space, and append the results into the normal
@@ -294,8 +437,9 @@ function Die() {
         var Tmodel_to_view = times(Tmodel_to_world, Tworld_to_view)
         var Tnormal = m4.transpose(m4.inverse(Tmodel_to_camera))
 
-        // Set up triangles
-        addSpinTop()
+        // Set up triangles/
+        // addSpinTop()
+        addCube([0,0,0], 300, dieColor)
         triangleToVertex(triangles)
         results = triangleToVertex(triangles)
         vertexPosRaw.push(...results[0])
