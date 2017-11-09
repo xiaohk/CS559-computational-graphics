@@ -10,7 +10,7 @@ function Die() {
     var slider1 = document.getElementById('slider1')
     slider1.value = 0 
     var slider2 = document.getElementById('slider2')
-    slider2.value = 0 
+    slider2.value = 5 
     var slider3 = document.getElementById('slider3')
     slider3.value = 400 
     var slider4 = document.getElementById('slider4')
@@ -18,11 +18,22 @@ function Die() {
     var slider5 = document.getElementById('slider5')
     slider5.value = 0
 
+    var dieView = checkbox1.checked
+    var simulateTime = checkbox2.checked
+
+    var angle1 = Math.PI/2
+    var angle2 = 0 
+    var angle3 = 0
+    var angle4 = 0
+    var angle5 = 0
+    var fpsInterval, now, last
+    var speed = 0
+
     // Color variables
     var dieColor = [240/255, 60/255, 90/255]
     var topColor = [192/255, 192/255, 192/255]
     var circleColor = [203/255, 203/255, 203/255]
-    var light = v3.normalize([0,-1,0])
+    var light = v3.normalize([-1,-1,-1])
     var triangles = []
 
     // Read shader from HTML
@@ -416,8 +427,12 @@ function Die() {
         vertexColorsRaw = []
         vertexNormalRaw = []
 
-        var angle1 = slider1.value * 0.01 * Math.PI
-        var angle2 = slider2.value * 0.01 * Math.PI
+        angle1 = slider1.value * 0.01 * Math.PI
+        if (! simulateTime){
+            angle5 = slider5.value * 0.01 * Math.PI
+        }
+
+        light = v3.normalize([300*Math.cos(angle5), 300*Math.sin(angle5), -1])
 
         // Camera rotates around the y-axis
         var eye = [700 * Math.sin(angle1),  slider3.value, 700 * Math.cos(angle1)]
@@ -425,9 +440,23 @@ function Die() {
         var up = [0,1,0]
    
         // Transformation matrixes
-        var Tmodel_to_world = m4.axisRotation([0,1,0],angle2)
+        var transto = []
+        if (dieView){
+            transto = [0,0,0]
+        } else {
+            transto = [80, -300, 200]
+        }
+        var Tdie_to_world = times(times(times(times(
+            m4.axisRotation([0,0,1], Math.PI/4),
+            m4.axisRotation([1,0,0], 0.6154797)),
+            m4.axisRotation([0,1,0], angle3)),
+            m4.translation(transto)),
+            m4.axisRotation([0,1,0], angle4))
+
+        var Tmodel_to_world = m4.axisRotation([0,1,0], angle2)
         var Tworld_to_camera = m4.inverse(m4.lookAt(eye,target,up))
         var Tmodel_to_camera = times(Tmodel_to_world, Tworld_to_camera)
+        var Tdie_to_camera = times(Tdie_to_world, Tworld_to_camera)
         var Tprojection
         var zooming_scale = (slider4.value - slider4.min) /
                                 (slider4.max - slider4.min)
@@ -436,26 +465,70 @@ function Die() {
         var Tworld_to_view = times(Tworld_to_camera, Tprojection)
         var Tmodel_to_view = times(Tmodel_to_world, Tworld_to_view)
         var Tnormal = m4.transpose(m4.inverse(Tmodel_to_camera))
+        var Tnormal_die = m4.transpose(m4.inverse(Tdie_to_camera))
 
-        // Set up triangles/
-        // addSpinTop()
-        addCube([0,0,0], 300, dieColor)
+        // Clear screen, prepare for rendering
+            gl.clearColor(0.0, 0.0, 0.0, 1.0)
+            gl.enable(gl.DEPTH_TEST)
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+        // Draw the spinning top
+        if (!dieView){
+            addSpinTop()
+            triangleToVertex(triangles)
+            results = triangleToVertex(triangles)
+            vertexPosRaw.push(...results[0])
+            vertexColorsRaw.push(...results[1])
+            vertexNormalRaw.push(...results[2])
+            addBuffer()
+        
+            // Set up attribute and uniforms
+            gl.uniformMatrix4fv(shaderProgram.modelViewMatrix,
+                false, Tmodel_to_camera)
+            gl.uniformMatrix4fv(shaderProgram.projectionMatrix, false,
+                Tprojection)
+            gl.uniformMatrix4fv(shaderProgram.normalMatrix, false, Tnormal)
+            gl.uniform3fv(shaderProgram.light, light)
+                     
+            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
+            gl.vertexAttribPointer(shaderProgram.vColor, colorBuffer.itemSize,
+                gl.FLOAT,false, 0, 0)
+            gl.bindBuffer(gl.ARRAY_BUFFER, trianglePosBuffer)
+            gl.vertexAttribPointer(shaderProgram.vPos, trianglePosBuffer.itemSize,
+                gl.FLOAT, false, 0, 0)
+            gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer)
+            gl.vertexAttribPointer(shaderProgram.vNormal, normalBuffer.itemSize,
+                gl.FLOAT, false, 0, 0)
+
+            // Draw call
+            gl.drawArrays(gl.TRIANGLES, 0, trianglePosBuffer.numItems)
+        }
+
+        // Draw the cube
+        // Clear the triangles
+        triangles = []
+        vertexPosRaw = []
+        vertexColorsRaw = []
+        vertexNormalRaw = []
+
+        if (dieView){
+            addCube([0,0,0], 300, dieColor)
+            slider2.value = 0.5
+        } else {
+            addCube([0,0,0], 100, dieColor)
+            slider2.value = 5
+        }
         triangleToVertex(triangles)
         results = triangleToVertex(triangles)
         vertexPosRaw.push(...results[0])
         vertexColorsRaw.push(...results[1])
         vertexNormalRaw.push(...results[2])
         addBuffer()
-
-        // Clear screen, prepare for rendering
-        gl.clearColor(0.0, 0.0, 0.0, 1.0)
-        gl.enable(gl.DEPTH_TEST)
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     
         // Set up attribute and uniforms
-        gl.uniformMatrix4fv(shaderProgram.modelViewMatrix, false, Tmodel_to_camera)
+        gl.uniformMatrix4fv(shaderProgram.modelViewMatrix, false, Tdie_to_camera)
         gl.uniformMatrix4fv(shaderProgram.projectionMatrix, false, Tprojection)
-        gl.uniformMatrix4fv(shaderProgram.normalMatrix, false, Tnormal)
+        gl.uniformMatrix4fv(shaderProgram.normalMatrix, false, Tnormal_die)
         gl.uniform3fv(shaderProgram.light, light)
                  
         gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
@@ -471,12 +544,50 @@ function Die() {
         // Draw call
         gl.drawArrays(gl.TRIANGLES, 0, trianglePosBuffer.numItems)
 
+        update()
+    }
+
+    function update(){
+        speed = slider2.value
+        dieView = checkbox1.checked
+        simulateTime = checkbox2.checked
+        angle2 += Math.PI/360 * speed
+        angle3 += Math.PI/360 * 8 * speed
+        angle4 -= Math.PI/360 * speed
+        if (simulateTime){
+            angle5 += Math.PI/360 * 2
+        }
+    }
+
+    // Start animation
+    function startAnimation(fps){
+        fpsInterval = 1000 / fps
+        last = Date.now()
+        animate()
+    }
+
+    // Funciton to call animation and control the FPS
+    function animate(){
+        requestAnimationFrame(animate)
+        // Compare the time interval
+        now = Date.now()
+        if (now - last > fpsInterval){
+            last = now - ((now - last) % fpsInterval)
+            draw(now)    
+        }
     }
 
     slider1.addEventListener("input",draw)
     slider2.addEventListener("input",draw)
     slider3.addEventListener("input",draw)
     slider4.addEventListener("input",draw)
-    draw();
+    slider5.addEventListener("input",draw)
+
+    // Add checkbox listener
+    var checkbox_1 = document.querySelector("input[id=checkbox1]");
+    checkbox_1.addEventListener('change', update)
+    var checkbox_2 = document.querySelector("input[id=checkbox2]");
+    checkbox_2.addEventListener('change', update)
+    startAnimation(40)
 }
 window.onload = Die
