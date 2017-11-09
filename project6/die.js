@@ -520,10 +520,8 @@ function Die() {
 
         if (dieView){
             addCube([0,0,0], 300, dieColor)
-            slider2.value = 0.5
         } else {
             addCube([0,0,0], 100, dieColor)
-            slider2.value = 5
         }
         triangleToVertex(triangles)
         results = triangleToVertex(triangles)
@@ -557,8 +555,15 @@ function Die() {
     }
 
     function update(){
+        if (dieView != checkbox1.checked){
+            dieView = checkbox1.checked
+            if (checkbox1.checked){
+                slider2.value = 0.5
+            } else {
+                slider2.value = 5
+            }
+        }
         speed = slider2.value
-        dieView = checkbox1.checked
         simulateTime = checkbox2.checked
         if (checkbox3.checked){
             changeColor = 1

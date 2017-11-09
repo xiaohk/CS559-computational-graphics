@@ -104,5 +104,34 @@
   <script src="twgl.js/dist/twgl-full.min.js"></script>
   <script src="die.js"></script>
 
+  <h1> Description </h1>
+
+    <p>
+    In case you don't know, many people have no idea they are just sleeping. Sometimes dream is so real that people think it's reality. <br><br>
+
+    <img src="https://i.imgur.com/IyygvSo.jpg" height="500"/>  <br> 
+    
+  </p> <p>
+    The movie "Inception" has a decent discussion about what dream is, but many silly people just think it is fictional! <br> <br>
+    In the movie, totems are used to determine whether you are in a dream or not. <br> <br>
+    <img src="https://i.imgur.com/0etepBL.jpg" height="200"/>  
+    <img src="https://i.imgur.com/ETcmTf5.png" height="200"/>  <br> <br>
+    Do you want to test your "reality"? I have made two totems for you. After 5 seconds, you should see the spinning top falls down and you get a "3" on the die. Otherwise, time to wake up! 
+    <br> 
+    </p>
+
+
+    <h1> Implementing comments </h1>
+    <p>
+    The tricky part of modeling is solved in my project4, the challenge of using WebGL is to communicate the shader and my host
+    program. Compared to using painter's algorithm, z-buffer is really powerful. Interestingly, I have encountered z-fighting in this project.
+    </p>
+
+    <ul>
+    I have used some tricks in the implementation:
+    <li>When drawing the circles on the die, I added some small number to the circle vertexes. So it can "floats" on the surface. This is not an elegant way, but it really solved the z-fighting problem. </li>
+    <li>Modeling the spin top and die hierarchically, so I can make more interesting animation. Rotating a cube on one vertex is actually harder than I expected. It would be cool if I can simulate the gravity in future projects. </li>
+    <li>Use an arc "track" to shoot light (with changing "Disco ball" light), to simulate the day time.</li>
+  </ul>
 </body>
 </html>
