@@ -1,5 +1,4 @@
 function Die() {
-
     // Set up Canvas
     var canvas = document.getElementById("myCanvas")
     var gl = canvas.getContext("webgl")
@@ -20,6 +19,7 @@ function Die() {
 
     var dieView = checkbox1.checked
     var simulateTime = checkbox2.checked
+    var changeColor = 1 
 
     var angle1 = Math.PI/2
     var angle2 = 0 
@@ -28,6 +28,7 @@ function Die() {
     var angle5 = 0
     var fpsInterval, now, last
     var speed = 0
+    var startTime = Date.now()
 
     // Color variables
     var dieColor = [240/255, 60/255, 90/255]
@@ -87,6 +88,10 @@ function Die() {
         "normalMatrix")
     shaderProgram.light = gl.getUniformLocation(shaderProgram,
         "light")
+    shaderProgram.time = gl.getUniformLocation(shaderProgram,
+        "time")
+    shaderProgram.changeColor = gl.getUniformLocation(shaderProgram,
+        "changeColor")
 
     // vertex positions
     var vertexPosRaw = []
@@ -420,7 +425,7 @@ function Die() {
         return [vertexes, colors, normals]
     }
 
-    function draw() {
+    function draw(time) {
         // Clear the triangles
         triangles = []
         vertexPosRaw = []
@@ -489,6 +494,8 @@ function Die() {
                 Tprojection)
             gl.uniformMatrix4fv(shaderProgram.normalMatrix, false, Tnormal)
             gl.uniform3fv(shaderProgram.light, light)
+            gl.uniform1f(shaderProgram.time, time)
+            gl.uniform1f(shaderProgram.changeColor, changeColor)
                      
             gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
             gl.vertexAttribPointer(shaderProgram.vColor, colorBuffer.itemSize,
@@ -530,6 +537,8 @@ function Die() {
         gl.uniformMatrix4fv(shaderProgram.projectionMatrix, false, Tprojection)
         gl.uniformMatrix4fv(shaderProgram.normalMatrix, false, Tnormal_die)
         gl.uniform3fv(shaderProgram.light, light)
+        gl.uniform1f(shaderProgram.time, time)
+        gl.uniform1f(shaderProgram.changeColor, changeColor)
                  
         gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
         gl.vertexAttribPointer(shaderProgram.vColor, colorBuffer.itemSize,
@@ -551,6 +560,11 @@ function Die() {
         speed = slider2.value
         dieView = checkbox1.checked
         simulateTime = checkbox2.checked
+        if (checkbox3.checked){
+            changeColor = 1
+        } else {
+            changeColor = 0
+        }
         angle2 += Math.PI/360 * speed
         angle3 += Math.PI/360 * 8 * speed
         angle4 -= Math.PI/360 * speed
@@ -573,7 +587,7 @@ function Die() {
         now = Date.now()
         if (now - last > fpsInterval){
             last = now - ((now - last) % fpsInterval)
-            draw(now)    
+            draw(now - startTime)    
         }
     }
 
@@ -588,6 +602,9 @@ function Die() {
     checkbox_1.addEventListener('change', update)
     var checkbox_2 = document.querySelector("input[id=checkbox2]");
     checkbox_2.addEventListener('change', update)
+    var checkbox_3 = document.querySelector("input[id=checkbox3]");
+    checkbox_3.addEventListener('change', update)
+
     startAnimation(40)
 }
 window.onload = Die

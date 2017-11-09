@@ -11,7 +11,9 @@
 		uniform mat4 normalMatrix;
 		uniform mat4 modelViewMatrix;
 		uniform mat4 projectionMatrix;
+		uniform float changeColor;
 		uniform vec3 light;
+		uniform float time;
 		varying vec3 fNormal;
 		varying vec3 fPosition;
 		varying vec3 fColor;
@@ -30,6 +32,8 @@
 		precision highp float;
 		uniform vec3 light;
 		uniform mat4 modelViewMatrix;
+		uniform float time;
+		uniform float changeColor;
 		varying vec3 fNormal;
 		varying vec3 fPosition;
 		varying vec3 fColor;
@@ -43,7 +47,11 @@
 		  vec3 h = normalize(e+l);
 
 		  // Light colors
-		  vec3 diffuse_color = fColor;
+		  vec3 changing = vec3(abs(cos(time*0.0001)) + 0.1,
+		  	abs(sin(time*0.0002)) + 0.1, abs(sin(time*0.0003)) + 0.1);
+		  vec3 diffuse_color = fColor + changeColor * changing;
+		  
+
 		  vec3 ambient_color = fColor;
 		  vec3 specular_color = vec3(1.0, 1.0, 1.0);
 		  
@@ -90,6 +98,8 @@
   <br>
   <input id="checkbox2" type="checkbox" name="simulateTime" value= "Show"/>
   Simulate Time
+  <input id="checkbox3" type="checkbox" name="disco" value= "Show"/>
+  Disco Effect
   <br>
   <script src="twgl.js/dist/twgl-full.min.js"></script>
   <script src="die.js"></script>
