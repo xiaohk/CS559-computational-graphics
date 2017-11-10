@@ -501,7 +501,7 @@ function Die() {
             gl.vertexAttribPointer(shaderProgram.vColor, colorBuffer.itemSize,
                 gl.FLOAT,false, 0, 0)
             gl.bindBuffer(gl.ARRAY_BUFFER, trianglePosBuffer)
-            gl.vertexAttribPointer(shaderProgram.vPos, trianglePosBuffer.itemSize,
+            gl.vertexAttribPointer(shaderProgram.vPosition, trianglePosBuffer.itemSize,
                 gl.FLOAT, false, 0, 0)
             gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer)
             gl.vertexAttribPointer(shaderProgram.vNormal, normalBuffer.itemSize,
@@ -542,7 +542,7 @@ function Die() {
         gl.vertexAttribPointer(shaderProgram.vColor, colorBuffer.itemSize,
             gl.FLOAT,false, 0, 0)
         gl.bindBuffer(gl.ARRAY_BUFFER, trianglePosBuffer)
-        gl.vertexAttribPointer(shaderProgram.vPos, trianglePosBuffer.itemSize,
+        gl.vertexAttribPointer(shaderProgram.vPosition, trianglePosBuffer.itemSize,
             gl.FLOAT, false, 0, 0)
         gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer)
         gl.vertexAttribPointer(shaderProgram.vNormal, normalBuffer.itemSize,
