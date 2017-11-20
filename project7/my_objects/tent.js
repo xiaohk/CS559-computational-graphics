@@ -17,9 +17,10 @@ var v3 = v3 || twgl.v3
 // This function adds rotation transform
 function addCylinderRotate(center, radius, num, color, height, triangles,
                            Tx_rotate){
-    //var Tlocal_to_tent = m4.multiply(m4.translation(center), Tx_rotate)
-    var Tlocal_to_tent = Tx_rotate 
+    var Tlocal_to_tent = m4.multiply(Tx_rotate, m4.translation(center))
     var topCenter = [center[0], center[1]+height, center[2]]
+    var topCenter = [0, height, 0]
+    var center = [0, 0, 0]
     var topPoints = getCirclePoints(topCenter, radius, num)
     var bottomPoints = getCirclePoints(center, radius, num)
 
@@ -30,8 +31,6 @@ function addCylinderRotate(center, radius, num, color, height, triangles,
         topPoints[i] = m4.transformPoint(Tlocal_to_tent, topPoints[i])
         bottomPoints[i] = m4.transformPoint(Tlocal_to_tent, bottomPoints[i])
     }
-
-    console.log(center)
 
     var localTriangles = []
 
@@ -112,6 +111,10 @@ function printNormal(num, numCir, normals){
         this.width = width
         this.height = height
         this.vertexes = []
+        this.poleOffset = 0.2
+        this.poleColor = [160/255, 160/255, 160/255]
+        this.poleRadius = 0.1
+        this.poleCircleNum = 16
     }
 
     // One of the object necessary function
@@ -159,12 +162,39 @@ function printNormal(num, numCir, normals){
             vertexNormalRaw = []
 
             // Add triangles
-            //  addCylinderRotate(center, radius, num, color, height, triangles,
-            //               Tx_rotate)
-            console.log(this.vertexes)
-            addCylinderRotate([1.5, 0, 1.5], 0.1, 6, [1,0,0], 4, triangles,
+            // Compute the length of each pole
+            var poleVertexes = []
+            for(var i = 0; i < this.vertexes.length; i++){
+                console.log(this.vertexes[i])
+                poleVertexes[i] = [this.vertexes[i][0] + this.poleOffset,
+                                   this.vertexes[i][1],
+                                   this.vertexes[i][2] + this.poleOffset]
+            }
+            
+            var poleHeight = v3.length(v3.subtract(this.vertexes[0],
+                this.vertexes[1]))
+        
+
+            addCylinderRotate(this.vertexes[1], this.poleRadius, this.poleCircleNum,
+                this.poleColor, poleHeight, triangles,
+                m4.axisRotation(v3.subtract(this.vertexes[4],
+                    this.vertexes[2]), Math.PI/4))
+
+            addCylinderRotate(this.vertexes[2], this.poleRadius, this.poleCircleNum,
+                this.poleColor, poleHeight, triangles,
                 m4.axisRotation(v3.subtract(this.vertexes[1],
-                this.vertexes[3]), Math.PI/4))
+                    this.vertexes[3]), Math.PI/4))
+
+            addCylinderRotate(this.vertexes[3], this.poleRadius, this.poleCircleNum,
+                this.poleColor, poleHeight, triangles,
+                m4.axisRotation(v3.subtract(this.vertexes[2],
+                    this.vertexes[4]), Math.PI/4))
+
+            addCylinderRotate(this.vertexes[4], this.poleRadius, this.poleCircleNum,
+                this.poleColor, poleHeight, triangles,
+                m4.axisRotation(v3.subtract(this.vertexes[3],
+                    this.vertexes[1]), Math.PI/4))
+
 
             // Convert triangles to webgl array info
             var results = triangleToVertex(triangles)
@@ -229,7 +259,7 @@ function printNormal(num, numCir, normals){
 })()
 
 // Tent(name, position, size, color, width, height)
-grobjects.push(new Tent("Tent", [0,0,0], 1, [68/255, 36/255, 29/255], 
+grobjects.push(new Tent("Tent", [0,0,0], 1, [203/255, 181/255, 182/255],
                          3, 2))
 
 
