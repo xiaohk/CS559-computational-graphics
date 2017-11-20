@@ -12,59 +12,26 @@ var v3 = v3 || twgl.v3
 
 // Helper functions
 
-// Get the vertex from a circle from my P6
-function getCirclePoints(center, radius, numOfPoints){
-    // Center information
-    var xt = center[0], yt = center[1], zt = center[2]
-    var xb = radius, yb = 0, zb = radius
-    var theta = Math.PI / 2
-    var phi = 0
-
-    var location = []
-    var points = []
-
-    phi = 0
-    points.push([xt + xb * Math.sin(theta) * Math.cos(phi),
-                 yt + yb * Math.cos(theta),
-                 zt + zb * Math.sin(theta) * Math.sin(phi)])
-    for (phi = (1/(numOfPoints/2)) * Math.PI; phi <= 2 * Math.PI;
-         phi += (1/(numOfPoints/2)) * Math.PI){
-        location = [xt + xb * Math.sin(theta) * Math.cos(phi),
-                    yt + yb * Math.cos(theta),
-                    zt + zb * Math.sin(theta) * Math.sin(phi)]
-        points.push(location)
-    }
-    return points
-}
-
-// A function to convert an array of triangles into an array of vertexes,
-// and an array of color information, it also computes the normal for 
-// each triangle in the given space, and append the results into the normal
-// raw array.
-function triangleToVertex(triangles) {
-    var vertexes = []
-    var colors = []
-    var normals = []
-    var cur
-    for(var i = 0; i < triangles.length; i++){
-        cur = triangles[i]
-        vertexes.push(...cur[0], ...cur[1], ...cur[2])
-        colors.push(...cur[3], ...cur[3], ...cur[3])
-
-        var norm = v3.normalize(v3.cross(v3.subtract(cur[1], cur[0]),
-                                         v3.subtract(cur[2], cur[0])))
-        normals.push(...norm, ...norm, ...norm)
-    }
-    return [vertexes, colors, normals]
-}
-
 // Add triangles to draw a circle
 // Center would be the center of the bottom circle
-function addCylinder(center, radius, num, color, height, triangles){
-  
+// This function adds rotation transform
+function addCylinderRotate(center, radius, num, color, height, triangles,
+                           Tx_rotate){
+    //var Tlocal_to_tent = m4.multiply(m4.translation(center), Tx_rotate)
+    var Tlocal_to_tent = Tx_rotate 
     var topCenter = [center[0], center[1]+height, center[2]]
     var topPoints = getCirclePoints(topCenter, radius, num)
     var bottomPoints = getCirclePoints(center, radius, num)
+
+    // Transform all vertex to the new position
+    center = m4.transformPoint(Tlocal_to_tent, center)
+    topCenter = m4.transformPoint(Tlocal_to_tent, topCenter)
+    for(var i = 0; i < num; i++){
+        topPoints[i] = m4.transformPoint(Tlocal_to_tent, topPoints[i])
+        bottomPoints[i] = m4.transformPoint(Tlocal_to_tent, bottomPoints[i])
+    }
+
+    console.log(center)
 
     var localTriangles = []
 
@@ -92,7 +59,8 @@ function addCylinder(center, radius, num, color, height, triangles){
     }
 
     // Finish up with triangles off the loop
-    localTriangles.push([bottomPoints[num-1], topPoints[num-1], bottomPoints[0], color])
+    localTriangles.push([bottomPoints[num-1], topPoints[num-1],
+                         bottomPoints[0], color])
     localTriangles.push([topPoints[num-1], topPoints[0], bottomPoints[0], color])
 
     // Push local triangles into global triangles
@@ -101,8 +69,24 @@ function addCylinder(center, radius, num, color, height, triangles){
     }
 }
 
-function addTent(center, weight, height, color){
+// Adding the tent
+function addTent(center, width, height, color, triangles, outVertexes=null){
+    var topCenter = [center[0], center[1]+height, center[2]]
+    var vertexes = [[center[0]-width/2, center[1], center[2]+width/2],
+                    [center[0]+width/2, center[1], center[2]+width/2],
+                    [center[0]+width/2, center[1], center[2]-width/2],
+                    [center[0]-width/2, center[1], center[2]-width/2]]
 
+    // Add Four triangles
+    for(var i = 0; i < 4; i++){
+        triangles.push([topCenter, vertexes[i], vertexes[(i+1)%4], color])
+    }
+
+    // Output the vertexes
+    if(outVertexes){
+        outVertexes.push(topCenter)
+        outVertexes.push(...vertexes)
+    }
 }
 
 function printNormal(num, numCir, normals){
@@ -114,39 +98,43 @@ function printNormal(num, numCir, normals){
 (function() {
     "use strict"
 
-    var shaderProgram = undefined
-    var buffers = undefined
-    var triangles = []
-    var vertexPosRaw = []
-    var vertexColorsRaw = []
-    var vertexNormalRaw = []
+    var tentShaderProgram = undefined
+    var tentBuffers = undefined
+    var poleShaderProgram = undefined
+    var poleBuffers = undefined
 
     // constructor for Trunk
-    Tent = function Trunk(name, position, size, color, radius, numCircle,
-                           height) {
+    Tent = function Tent(name, position, size, color, width, height) {
         this.name = name
         this.position = position || [0,0,0]
         this.size = size || 1.0
         this.color = color || [.7,.8,.9]
-        this.radius = radius
-        this.numCircle = numCircle
+        this.width = width
         this.height = height
+        this.vertexes = []
     }
 
     // One of the object necessary function
     Tent.prototype.init = function(drawingState) {
         // Get the gl content
         var gl=drawingState.gl
-
-        // Share the shader with all trunks
-        if (!shaderProgram) {
-            shaderProgram = twgl.createProgramInfo(gl, ["cube-vs", "cube-fs"]);
+        var triangles = []
+        var vertexPosRaw = []
+        var vertexColorsRaw = []
+        var vertexNormalRaw = []
+        
+        // Use the trunk shader for tent
+        if (!tentShaderProgram) {
+            tentShaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"])
         }
-        if (!buffers) {
+        if (!poleShaderProgram) {
+            poleShaderProgram = twgl.createProgramInfo(gl, ["pole-vs", "pole-fs"])
+        }
 
+        if (!tentBuffers) {
             // Add triangles
-            addCylinder(this.position, this.radius, this.numCircle,
-                        this.color, this.height, triangles)
+            addTent(this.position, this.width, this.height, this.color,
+                    triangles, this.vertexes)
 
             // Convert triangles to webgl array info
             var results = triangleToVertex(triangles)
@@ -155,31 +143,84 @@ function printNormal(num, numCir, normals){
             vertexNormalRaw.push(...results[2])
 
             var arrays = {
-                vpos : { numComponents: 3, data: new Float32Array(vertexPosRaw)},
+                vpos : {numComponents: 3, data: new Float32Array(vertexPosRaw)},
                 vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
                 vcolor : {numComponents: 3, data: new Float32Array(vertexColorsRaw)}
             }
 
-            buffers = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
+            tentBuffers = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
+        }
+
+        if (!poleBuffers) {
+            // Clear the cache
+            triangles = []
+            vertexPosRaw = []
+            vertexColorsRaw = []
+            vertexNormalRaw = []
+
+            // Add triangles
+            //  addCylinderRotate(center, radius, num, color, height, triangles,
+            //               Tx_rotate)
+            console.log(this.vertexes)
+            addCylinderRotate([1.5, 0, 1.5], 0.1, 6, [1,0,0], 4, triangles,
+                m4.axisRotation(v3.subtract(this.vertexes[1],
+                this.vertexes[3]), Math.PI/4))
+
+            // Convert triangles to webgl array info
+            var results = triangleToVertex(triangles)
+            vertexPosRaw.push(...results[0])
+            vertexColorsRaw.push(...results[1])
+            vertexNormalRaw.push(...results[2])
+
+            var arrays = {
+                vpos : {numComponents: 3, data: new Float32Array(vertexPosRaw)},
+                vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
+                vcolor : {numComponents: 3, data: new Float32Array(vertexColorsRaw)}
+            }
+
+            poleBuffers = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
         }
     }
 
     Tent.prototype.draw = function(drawingState) {
-        // we make a model matrix to place the cube in the world
+        // we make a model matrix to place the tent in the world
         var modelM = twgl.m4.scaling([this.size,this.size,this.size])
         twgl.m4.setTranslation(modelM,this.position,modelM)
 
         var gl = drawingState.gl
-        gl.useProgram(shaderProgram.program)
-        twgl.setBuffersAndAttributes(gl,shaderProgram,buffers)
-        twgl.setUniforms(shaderProgram,{
-            view:drawingState.view,
-            proj:drawingState.proj,
-            lightdir:drawingState.sunDirection,
-            //lightdir: [0,1,0],
-            cubecolor:this.color,
+
+        // Draw the tent
+        gl.useProgram(tentShaderProgram.program)
+
+        // Bounding buffers
+        twgl.setBuffersAndAttributes(gl, tentShaderProgram, tentBuffers)
+
+        // Set up uniforms
+        twgl.setUniforms(tentShaderProgram,{
+            view: drawingState.view,
+            proj: drawingState.proj,
+            lightdir: drawingState.sunDirection,
             model: modelM })
-        twgl.drawBufferInfo(gl, gl.TRIANGLES, buffers)
+
+        // Draw call
+        twgl.drawBufferInfo(gl, gl.TRIANGLES, tentBuffers)
+
+        // Draw the poles
+        gl.useProgram(poleShaderProgram.program)
+
+        // Bounding buffers
+        twgl.setBuffersAndAttributes(gl, poleShaderProgram, poleBuffers)
+
+        // Set up uniforms
+        twgl.setUniforms(poleShaderProgram,{
+            view: drawingState.view,
+            proj: drawingState.proj,
+            lightdir: drawingState.sunDirection,
+            model: modelM })
+
+        // Draw call
+        twgl.drawBufferInfo(gl, gl.TRIANGLES, poleBuffers)
+
     }
 
     Tent.prototype.center = function(drawingState) {
@@ -187,8 +228,8 @@ function printNormal(num, numCir, normals){
     }
 })()
 
-//Trunk(name, position, size, color, radius, numCircle, height)
-grobjects.push(new Tent("Tent",[-2,0,2], 0.5, [68/255, 36/255, 29/255], 
-                         1, 32, 1.5) )
+// Tent(name, position, size, color, width, height)
+grobjects.push(new Tent("Tent", [0,0,0], 1, [68/255, 36/255, 29/255], 
+                         3, 2))
 
 

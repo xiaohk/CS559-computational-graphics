@@ -136,7 +136,7 @@ function printNormal(num, numCir, normals){
 
         // Share the shader with all trunks
         if (!shaderProgram) {
-            shaderProgram = twgl.createProgramInfo(gl, ["cube-vs", "cube-fs"]);
+            shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"]);
         }
         if (!buffers) {
 
@@ -183,7 +183,3 @@ function printNormal(num, numCir, normals){
 })()
 
 //Trunk(name, position, size, color, radius, numCircle, height)
-grobjects.push(new Trunk("Trunk1",[-2,0,2], 0.5, [68/255, 36/255, 29/255], 
-                         1, 32, 1.5) )
-
-
