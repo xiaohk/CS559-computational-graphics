@@ -49,6 +49,22 @@ grobjects.push(sheep1)
 grobjects.push(sheep2)
 grobjects.push(sheep3)
 
+
+var myBoy1 = new Boy(name = "Jack",
+                     position = [-1,0,3],
+                     size = 0.001,
+                     color = [236/255, 205/255, 182/255],
+                     theta = Math.PI*1/5)
+
+var myBoy2 = new Boy(name = "Ennis",
+                     position = [-1.2,0,3.8],
+                     size = 0.001,
+                     color = [201/255, 156/255, 132/255],
+                     theta = Math.PI*3/5)
+
+grobjects.push(myBoy1)
+grobjects.push(myBoy2)
+
 // +++++++++++++++++++++++ Trees +++++++++++++++++++++++++++++++++++
 
 var treeColor1 = [44/255, 67/255, 46/255]
