@@ -7,8 +7,6 @@ var grobjects = grobjects || []
 var Trunk = undefined
 var m4 = m4 || twgl.m4
 var v3 = v3 || twgl.v3
-//var SpinningCube = undefined;
-
 
 // Helper functions
 
@@ -110,16 +108,11 @@ function printNormal(num, numCir, normals){
 (function() {
     "use strict"
 
-    var shaderProgram = undefined
-    var buffers = undefined
-    var triangles = []
-    var vertexPosRaw = []
-    var vertexColorsRaw = []
-    var vertexNormalRaw = []
-
     // constructor for Trunk
     Trunk = function Trunk(name, position, size, color, radius, numCircle,
                            height) {
+        this.shaderProgram = undefined
+        this.buffer = undefined
         this.name = name
         this.position = position || [0,0,0]
         this.size = size || 1.0
@@ -131,33 +124,35 @@ function printNormal(num, numCir, normals){
 
     // One of the object necessary function
     Trunk.prototype.init = function(drawingState) {
+        var triangles = []
+        var vertexPosRaw = []
+        var vertexColorsRaw = []
+        var vertexNormalRaw = []
+        this.buffer = null
+
         // Get the gl content
         var gl=drawingState.gl
 
         // Share the shader with all trunks
-        if (!shaderProgram) {
-            shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"]);
+        this.shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"]);
+        
+        // Add triangles
+        addCylinder(this.position, this.radius, this.numCircle,
+                    this.color, this.height, triangles)
+
+        // Convert triangles to webgl array info
+        var results = triangleToVertex(triangles)
+        vertexPosRaw.push(...results[0])
+        vertexColorsRaw.push(...results[1])
+        vertexNormalRaw.push(...results[2])
+
+        var arrays = {
+            vpos : {numComponents:3, data: new Float32Array(vertexPosRaw)},
+            vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
+            vcolor : {numComponents:3, data: new Float32Array(vertexColorsRaw)}
         }
-        if (!buffers) {
 
-            // Add triangles
-            addCylinder(this.position, this.radius, this.numCircle,
-                        this.color, this.height, triangles)
-
-            // Convert triangles to webgl array info
-            var results = triangleToVertex(triangles)
-            vertexPosRaw.push(...results[0])
-            vertexColorsRaw.push(...results[1])
-            vertexNormalRaw.push(...results[2])
-
-            var arrays = {
-                vpos : { numComponents: 3, data: new Float32Array(vertexPosRaw)},
-                vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
-                vcolor : {numComponents: 3, data: new Float32Array(vertexColorsRaw)}
-            }
-
-            buffers = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
-        }
+        this.buffer = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
     }
 
     Trunk.prototype.draw = function(drawingState) {
@@ -166,16 +161,15 @@ function printNormal(num, numCir, normals){
         twgl.m4.setTranslation(modelM,this.position,modelM)
 
         var gl = drawingState.gl
-        gl.useProgram(shaderProgram.program)
-        twgl.setBuffersAndAttributes(gl,shaderProgram,buffers)
-        twgl.setUniforms(shaderProgram,{
+        gl.useProgram(this.shaderProgram.program)
+        twgl.setBuffersAndAttributes(gl,this.shaderProgram, this.buffer)
+        twgl.setUniforms(this.shaderProgram,{
             view:drawingState.view,
             proj:drawingState.proj,
             lightdir:drawingState.sunDirection,
-            //lightdir: [0,1,0],
             cubecolor:this.color,
             model: modelM })
-        twgl.drawBufferInfo(gl, gl.TRIANGLES, buffers)
+        twgl.drawBufferInfo(gl, gl.TRIANGLES, this.buffer)
     }
     Trunk.prototype.center = function(drawingState) {
         return this.position

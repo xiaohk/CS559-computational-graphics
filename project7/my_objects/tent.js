@@ -165,7 +165,6 @@ function printNormal(num, numCir, normals){
             // Compute the length of each pole
             var poleVertexes = []
             for(var i = 0; i < this.vertexes.length; i++){
-                console.log(this.vertexes[i])
                 poleVertexes[i] = [this.vertexes[i][0] + this.poleOffset,
                                    this.vertexes[i][1],
                                    this.vertexes[i][2] + this.poleOffset]
@@ -259,7 +258,6 @@ function printNormal(num, numCir, normals){
 })()
 
 // Tent(name, position, size, color, width, height)
-grobjects.push(new Tent("Tent", [0,0,0], 1, [203/255, 181/255, 182/255],
-                         3, 2))
+
 
 
