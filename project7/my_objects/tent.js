@@ -5,68 +5,8 @@
 // Global object list
 var grobjects = grobjects || []
 var Tent = undefined
-var m4 = m4 || twgl.m4
-var v3 = v3 || twgl.v3
-//var SpinningCube = undefined;
-
-
-// Helper functions
-
-// Add triangles to draw a circle
-// Center would be the center of the bottom circle
-// This function adds rotation transform
-function addCylinderRotate(center, radius, num, color, height, triangles,
-                           Tx_rotate){
-    var Tlocal_to_tent = m4.multiply(Tx_rotate, m4.translation(center))
-    var topCenter = [center[0], center[1]+height, center[2]]
-    var topCenter = [0, height, 0]
-    var center = [0, 0, 0]
-    var topPoints = getCirclePoints(topCenter, radius, num)
-    var bottomPoints = getCirclePoints(center, radius, num)
-
-    // Transform all vertex to the new position
-    center = m4.transformPoint(Tlocal_to_tent, center)
-    topCenter = m4.transformPoint(Tlocal_to_tent, topCenter)
-    for(var i = 0; i < num; i++){
-        topPoints[i] = m4.transformPoint(Tlocal_to_tent, topPoints[i])
-        bottomPoints[i] = m4.transformPoint(Tlocal_to_tent, bottomPoints[i])
-    }
-
-    var localTriangles = []
-
-    // Add triangles for the top circle
-    var cur = color
-    for(var i = 0; i < num - 1; i++){
-        localTriangles.push([topPoints[i], topCenter, topPoints[i+1], color])
-    }
-    // Add the last one to close the plane
-    localTriangles.push([topPoints[num-1], topCenter, topPoints[0], color])
-
-    // Add triangles for the bottom circle
-    // Reverse the order of adding vertexes
-    for(var i = 0; i < num - 1; i++){
-        localTriangles.push([bottomPoints[i], bottomPoints[i+1], center, color])
-    }
-
-    // Add the last one to close the plane
-    localTriangles.push([bottomPoints[num-1],bottomPoints[0], center, color])
-
-    // Add triangles that connect both circles
-    for(var i = 0; i < num - 1; i++){
-        localTriangles.push([bottomPoints[i], topPoints[i], bottomPoints[i+1], color])
-        localTriangles.push([topPoints[i], topPoints[i+1], bottomPoints[i+1], color])
-    }
-
-    // Finish up with triangles off the loop
-    localTriangles.push([bottomPoints[num-1], topPoints[num-1],
-                         bottomPoints[0], color])
-    localTriangles.push([topPoints[num-1], topPoints[0], bottomPoints[0], color])
-
-    // Push local triangles into global triangles
-    for(var i = 0; i < localTriangles.length; i++){
-        triangles.push(localTriangles[i])
-    }
-}
+var m4 = m4 || twgl.m4;
+var v3 = v3 || twgl.v3;
 
 // Adding the tent
 function addTent(center, width, height, color, triangles, outVertexes=null){
@@ -86,12 +26,6 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         outVertexes.push(topCenter)
         outVertexes.push(...vertexes)
     }
-}
-
-function printNormal(num, numCir, normals){
-    console.log(normals[(num-1)*3*numCir])
-    console.log(normals[(num-1)*3*numCir + 1])
-    console.log(normals[(num-1)*3*numCir + 2])
 }
 
 (function() {
