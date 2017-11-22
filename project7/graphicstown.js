@@ -36,16 +36,19 @@ it sets up the main function to be called on window.onload
 window.onload = function() {
     "use strict";
 
+    // I want to add description after the canvas
+    var des = document.getElementById("description")
+
     // set up the canvas and context
     var canvas = document.createElement("canvas");
     canvas.setAttribute("width",600);
     canvas.setAttribute("height",600);
-    document.body.appendChild(canvas);
+    document.body.insertBefore(canvas, des);
 
     // make a place to put the drawing controls - a div
     var controls = document.createElement("DIV");
     controls.id = "controls";
-    document.body.appendChild(controls);
+    document.body.insertBefore(controls, des);
 
     // a switch between camera modes
     var uiMode = document.createElement("select");

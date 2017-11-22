@@ -5,7 +5,7 @@
   -->
 <head>
     <meta charset="UTF-8">
-    <title>GraphicsTown JS 2015!</title>
+    <title>Brokeback Mountain</title>
 </head>
 <body>
 <!-- load this stuff first -->
@@ -205,6 +205,7 @@
         float xs = step(1.0,mod(outPos.x,2.0));
         float zs = step(1.0,mod(outPos.z,2.0));
         float ss = (xs>.5) ? zs : 1.0-zs;
+        ss = 1.0-zs;
         gl_FragColor = mix(vec4(0.5,0.5,0.5,1),
                            vec4(0.3,0.5,0.4,1),
                            ss
@@ -213,4 +214,36 @@
     }
 </script>
 
+<body>
+    <p id="description">
+        <h1> Description</h1>
+        The inspiration for this project is Ang Lee's movie "Brokeback Mountain".
+        Here are some scenes of the movie in case you haven't watched it.
+        <br><br>
+        <a ><img src="https://i.imgur.com/7edHlEu.jpg"/></a> 
+        <a ><img src="https://i.imgur.com/IlayTwo.jpg"/></a> 
+        <br><br>
+        <a ><img src="https://i.imgur.com/gEIubUe.jpg"/></a> 
+        <br><br>
+        So, I try to implement some of the "brokebackish" features: Tent, Campfire, Cowboys, Sheeps, Pine trees, and some Trunks.
+
+        <h1> Implementing comments </h1>
+        <h2> Models Created by Me </h2>
+        <ul>
+
+        <li> <b> Campfire: </b> I added randomness to generate the size of stones around the campfire, so it looks more natural and asymmetric. The design of middle woods is also used in the framework of the tent. </li>
+        <li> <b> Tent: </b> I added some poles around the tent to make it more like the one in the movie. I also added a special shader (High specular light) to the pole, for its metallic looking.</li>
+        <li> <b> Pine trees: </b> I am very proud that I designed a dynamic way to draw different pine trees. If you look the trees in detail, you will find each tree is special, in terms of the shape, layer and height.</li>
+        <li> <b> Trunks: </b> They are just basic cylinders.</li></ul>
+        
+
+        <h2> Models Found on Web </h2>
+        <ul>
+        <li> <b> Cowboy: </b> Still need to figure out how to map the texture.</li>
+        <li> <b> Sheep: </b> I added a path and animation for the sheeps.</li></ul>
+        
+        
+        
+    </p>
+</body>
 </html>

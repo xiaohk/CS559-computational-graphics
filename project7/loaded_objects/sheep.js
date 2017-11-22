@@ -26,6 +26,8 @@ var v3 = v3 || twgl.v3;
         this.rotatingPos = position
         this.theta = 0
         this.backing = false
+        this.jump = 0
+        this.yOffset = 0
     }
 
     // One of the object necessary function
@@ -64,11 +66,20 @@ var v3 = v3 || twgl.v3;
         // Move sheeps using real time
         var zOffset = (Number(drawingState.realtime - this.now) / 1000.0) % 8 
 
+        if (Math.floor(Number(drawingState.realtime)) % 6 == 0){
+            if (this.jump != Math.floor(Number(drawingState.realtime))){
+                this.yOffset = Math.random() * 0.2
+                this.jump = Math.floor(Number(drawingState.realtime))
+            }
+        }
+
         if (this.backing){
-            var newPosition = [this.rotatingPos[0], this.rotatingPos[1],
+            var newPosition = [this.rotatingPos[0], this.rotatingPos[1] +
+                               this.yOffset,
                                this.rotatingPos[2] - zOffset]
         } else {
-            var newPosition = [this.rotatingPos[0], this.rotatingPos[1],
+            var newPosition = [this.rotatingPos[0], this.rotatingPos[1] +
+                               this.yOffset,
                                this.rotatingPos[2] + zOffset]
         }
 
@@ -76,7 +87,7 @@ var v3 = v3 || twgl.v3;
             this.backing = false
             this.rotating = true
             this.now = drawingState.realtime
-            this.rotatingPos = newPosition
+            this.rotatingPos = [newPosition[0], 0, newPosition[2]]
         }
 
         if (this.rotating){
