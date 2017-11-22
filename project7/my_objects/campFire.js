@@ -4,7 +4,7 @@
 
 // Global object list
 var grobjects = grobjects || []
-var Tree = undefined
+var CampFire = undefined
 var m4 = m4 || twgl.m4;
 var v3 = v3 || twgl.v3;
 
@@ -12,28 +12,27 @@ var v3 = v3 || twgl.v3;
     "use strict"
 
     // constructor for Trunk
-    Tree = function Tree(name, position, size, color, trunkColor, radius,
-                         trunkRadius, numCircle, trunkNumCircle, height,
-                         theta, numLayer, heightRatio) {
+    CampFire = function CampFire(name, position, size, color, stoneColor, radius,
+                                 poleRadius, numPole, numCircle, height, theta,
+                                 stoneScale) {
         this.shaderProgram = undefined
         this.buffer = undefined
         this.name = name
         this.position = position
         this.size = size
         this.color = color
-        this.trunkColor = trunkColor
+        this.stoneColor = stoneColor
         this.radius = radius
-        this.trunkRadius = trunkRadius
+        this.poleRadius = poleRadius
         this.numCircle = numCircle
-        this.trunkNumCircle = trunkNumCircle
+        this.numPole = numPole
         this.height = height
         this.theta = theta
-        this.numLayer = numLayer
-        this.heightRatio = heightRatio
+        this.stoneScale = stoneScale
     }
 
     // One of the object necessary function
-    Tree.prototype.init = function(drawingState) {
+    CampFire.prototype.init = function(drawingState) {
         var triangles = []
         var vertexPosRaw = []
         var vertexColorsRaw = []
@@ -47,19 +46,12 @@ var v3 = v3 || twgl.v3;
         this.shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"]);
         
         // Add triangles
-        // Get the layer information
-        var result = computePineTree(this.position, this.heightRatio,
-                                     this.height, this.radius, this.numLayer)
+        drawCampfire(this.position, this.radius, this.poleRadius, this.numPole,
+                     this.numCircle, this.color, this.height, this.theta,
+                     triangles) 
+        drawStones(this.position, this.radius + 0.2, 10, this.stoneColor,
+                   triangles, this.stoneScale)
         
-        for(var i = 0; i < result[0].length; i++){
-            addCone(result[0][i], result[1][i], this.numCircle, this.color,
-                result[2][i], triangles, m4.rotationY(this.theta))
-
-            addCylinder(this.position, this.trunkRadius, this.trunkNumCircle,
-                        this.trunkColor, this.heightRatio * this.height / 2,
-                        triangles)
-        }
-
         // Convert triangles to webgl array info
         var results = triangleToVertex(triangles)
         vertexPosRaw.push(...results[0])
@@ -75,10 +67,10 @@ var v3 = v3 || twgl.v3;
         this.buffer = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
     }
 
-    Tree.prototype.draw = function(drawingState) {
+    CampFire.prototype.draw = function(drawingState) {
         // we make a model matrix to place the cube in the world
-        var modelM = twgl.m4.scaling([this.size, this.size, this.size])
-        twgl.m4.setTranslation(modelM, this.position, modelM)
+        var modelM = twgl.m4.scaling([this.size,this.size,this.size])
+        twgl.m4.setTranslation(modelM,this.position,modelM)
 
         var gl = drawingState.gl
         gl.useProgram(this.shaderProgram.program)
@@ -92,7 +84,7 @@ var v3 = v3 || twgl.v3;
         twgl.drawBufferInfo(gl, gl.TRIANGLES, this.buffer)
     }
 
-    Tree.prototype.center = function(drawingState) {
+    CampFire.prototype.center = function(drawingState) {
         return this.position
     }
 })()

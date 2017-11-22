@@ -215,3 +215,82 @@ function computePineTree(basePosition, heightRatio, finalHeight,
     }
     return [centers, radius, heights]
 }
+
+// Draw a cube
+function addCube(center, color, triangles, Tx_rotate, Tx_scale){
+    var cubeToWorld = m4.multiply(m4.multiply(Tx_scale, Tx_rotate),
+        m4.translation(center))
+
+    var vertexes = [[0, 0, 0], [-0.5, 0, 0.5], [0.5, 0, 0.5], [0.5, 0, -0.5],
+                    [-0.5, 0, -0.5], [-0.5, 1, 0.5], [0.5, 1, 0.5],
+                    [0.5, 1, -0.5], [-0.5, 1, -0.5]]
+
+    // Transform the vertexes
+    for(var i = 0; i < vertexes.length; i++){
+        vertexes[i] =  m4.transformPoint(cubeToWorld, vertexes[i])
+    }
+
+    var localTriangles = []
+    // Front
+    localTriangles.push([vertexes[5], vertexes[1], vertexes[6], color])
+    localTriangles.push([vertexes[6], vertexes[2], vertexes[1], color])
+    // Back
+    localTriangles.push([vertexes[3], vertexes[4], vertexes[7], color])
+    localTriangles.push([vertexes[4], vertexes[8], vertexes[7], color])
+    // Top
+    localTriangles.push([vertexes[7], vertexes[8], vertexes[5], color])
+    localTriangles.push([vertexes[6], vertexes[7], vertexes[5], color])
+    // Bottom
+    localTriangles.push([vertexes[2], vertexes[1], vertexes[3], color])
+    localTriangles.push([vertexes[4], vertexes[3], vertexes[1], color])
+    // Left
+    localTriangles.push([vertexes[5], vertexes[8], vertexes[1], color])
+    localTriangles.push([vertexes[4], vertexes[1], vertexes[8], color])
+    // Right
+    localTriangles.push([vertexes[6], vertexes[2], vertexes[7], color])
+    localTriangles.push([vertexes[3], vertexes[7], vertexes[2], color])
+    
+    // Push local triangles into global triangles
+    for(var i = 0; i < localTriangles.length; i++){
+        triangles.push(localTriangles[i])
+    }
+}
+
+
+// Draw the campfire
+function drawCampfire(center, radius, poleRadius, num, numCircle, color, height,
+                      theta, triangles){
+    // Sample the points of the circle
+    var points = getCirclePoints(center, radius, num)
+
+    // Add poles
+    for (var i = 0; i < num; i++){
+        var tangent = []
+        // Compute the tangent vector
+        if (i == 0){
+            tangent = v3.subtract(points[1], points[num-1])
+        } else if (i == num-1){
+            tangent = v3.subtract(points[0], points[num-2])
+        } else {
+            tangent = v3.subtract(points[i+1], points[i-1])
+        }
+
+        // Draw the pole
+        addCylinderRotate(points[i], poleRadius, numCircle, color, height,
+                          triangles, m4.axisRotation(tangent, theta))
+    }
+}
+
+// Draw the stones around the campfire
+function drawStones(center, radius, numStone, color, triangles, scale){
+    // Sample the points from the circle
+    var points = getCirclePoints(center, radius, numStone)
+    var Tx_scale = m4.scaling([scale])
+    
+    for (var i = 0; i < numStone; i++){
+        var randomScale = m4.scaling([scale[0], scale[1], scale[2] +
+                                        Math.random()*0.3])
+        addCube(points[i], color, triangles,
+            m4.rotationY(-2 * Math.PI * i / numStone), randomScale)
+    }
+}

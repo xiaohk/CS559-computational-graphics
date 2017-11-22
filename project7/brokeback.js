@@ -65,6 +65,22 @@ var myBoy2 = new Boy(name = "Ennis",
 grobjects.push(myBoy1)
 grobjects.push(myBoy2)
 
+// +++++++++++++++++++++++ Campfire +++++++++++++++++++++++++++++++++++
+
+var myCampFire = new CampFire(name = "campfire",
+                              position = [0.5, 0, 1.7],
+                              size = 1,
+                              color = [96/255, 65/255, 48/255],
+                              stoneColor = [117/255, 108/255, 104/255],
+                              radius = 0.5,
+                              poleRadius = 0.05,
+                              numPole = 9,
+                              numCircle = 8,
+                              height = 0.7,
+                              theta = Math.PI/3.5,
+                              stoneScale = [0.15, 0.1, 0.12])
+grobjects.push(myCampFire)
+
 // +++++++++++++++++++++++ Trees +++++++++++++++++++++++++++++++++++
 
 var treeColor1 = [44/255, 67/255, 46/255]
