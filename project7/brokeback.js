@@ -49,6 +49,7 @@ grobjects.push(sheep1)
 grobjects.push(sheep2)
 grobjects.push(sheep3)
 
+// +++++++++++++++++++++++ Cowboys +++++++++++++++++++++++++++++++++++
 
 var myBoy1 = new Boy(name = "Jack",
                      position = [-1,0,3],

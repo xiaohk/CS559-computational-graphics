@@ -51,7 +51,7 @@ var v3 = v3 || twgl.v3;
                      triangles) 
         drawStones(this.position, this.radius + 0.2, 10, this.stoneColor,
                    triangles, this.stoneScale)
-        
+
         // Convert triangles to webgl array info
         var results = triangleToVertex(triangles)
         vertexPosRaw.push(...results[0])
