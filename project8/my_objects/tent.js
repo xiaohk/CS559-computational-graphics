@@ -31,14 +31,17 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
 (function() {
     "use strict"
 
-    var tentShaderProgram = undefined
-    var tentBuffers = undefined
     var poleShaderProgram = undefined
     var poleBuffers = undefined
 
     // constructor for Trunk
     Tent = function Tent(name, position, size, color, width, height) {
         this.name = name
+        this.tentProgram = null
+        this.buffers = []
+        this.tentAttributes = []
+        this.tentUniforms = []
+        this.texture = null
         this.position = position || [0,0,0]
         this.size = size || 1.0
         this.color = color || [.7,.8,.9]
@@ -49,6 +52,7 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         this.poleColor = [160/255, 160/255, 160/255]
         this.poleRadius = 0.1
         this.poleCircleNum = 16
+        this.texture = null
     }
 
     // One of the object necessary function
@@ -60,33 +64,55 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         var vertexColorsRaw = []
         var vertexNormalRaw = []
         
-        // Use the trunk shader for tent
-        if (!tentShaderProgram) {
-            tentShaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"])
-        }
+
         if (!poleShaderProgram) {
             poleShaderProgram = twgl.createProgramInfo(gl, ["pole-vs", "pole-fs"])
         }
 
-        if (!tentBuffers) {
-            // Add triangles
-            addTent(this.position, this.width, this.height, this.color,
-                    triangles, this.vertexes)
+        // Create Webgl shader for the tent
+        var vertexSource = document.getElementById("trunk-vs").text
+        var fragmentSource = document.getElementById("trunk-fs").text
 
-            // Convert triangles to webgl array info
-            var results = triangleToVertex(triangles)
-            vertexPosRaw.push(...results[0])
-            vertexColorsRaw.push(...results[1])
-            vertexNormalRaw.push(...results[2])
+        this.program = createGLProgram(gl, vertexSource, fragmentSource)
 
-            var arrays = {
-                vpos : {numComponents: 3, data: new Float32Array(vertexPosRaw)},
-                vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
-                vcolor : {numComponents: 3, data: new Float32Array(vertexColorsRaw)}
-            }
+        this.attributes = findAttribLocations(gl, this.program,
+            ["vpos", "vnormal", "vcolor"])
+        this.uniforms = findUniformLocations(gl, this.program,
+            ["view", "proj", "model", "lightdir"])
 
-            tentBuffers = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
+        // Add triangles
+        addTent(this.position, this.width, this.height, this.color,
+                triangles, this.vertexes)
+
+        // Convert triangles to webgl array info
+        var results = triangleToVertex(triangles)
+        vertexPosRaw.push(...results[0])
+        vertexColorsRaw.push(...results[1])
+        vertexNormalRaw.push(...results[2])
+
+        // Make vertex coordinates
+        var texCoord = []
+        for(var i = 0; i < triangles.length; i++){
+            texCoord.push(...[0.5,1, 0,0, 1,0])
         }
+
+        var image = new Image()
+        image.src = image_rock1
+
+        this.texture = createGLTexture(gl, image, true)
+        this.buffers[0] = createGLBuffer(gl, new Float32Array(vertexPosRaw),
+            gl.STATIC_DRAW)
+        this.buffers[1] = createGLBuffer(gl, new Float32Array(vertexNormalRaw),
+            gl.STATIC_DRAW)
+        this.buffers[2] = createGLBuffer(gl, new Float32Array(vertexColorsRaw),
+            gl.STATIC_DRAW)
+        //this.buffers[3] = createGLBuffer(gl, new Float32Array(texCoord),
+        //    gl.STATIC_DRAW)
+        
+        console.log(texCoord.length)
+        console.log(triangles.length)
+        console.log(vertexPosRaw.length)
+
 
         if (!poleBuffers) {
             // Clear the cache
@@ -153,20 +179,32 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         var gl = drawingState.gl
 
         // Draw the tent
-        gl.useProgram(tentShaderProgram.program)
-
-        // Bounding buffers
-        twgl.setBuffersAndAttributes(gl, tentShaderProgram, tentBuffers)
+        gl.useProgram(this.program)
+        gl.disable(gl.CULL_FACE)
 
         // Set up uniforms
-        twgl.setUniforms(tentShaderProgram,{
-            view: drawingState.view,
-            proj: drawingState.proj,
-            lightdir: drawingState.sunDirection,
-            model: modelM })
+        gl.uniformMatrix4fv(this.uniforms.view, gl.FALSE, drawingState.view)
+        gl.uniformMatrix4fv(this.uniforms.proj, gl.FALSE, drawingState.proj)
+        gl.uniformMatrix4fv(this.uniforms.model, gl.FALSE, modelM)
+        gl.uniform3fv(this.uniforms.lightdir, drawingState.sunDirection)
+
+        // Set up attributes
+        enableLocations(gl, this.attributes)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[0])
+        gl.vertexAttribPointer(this.attributes.vpos, 3, gl.FLOAT, false, 0, 0)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[1])
+        gl.vertexAttribPointer(this.attributes.vnormal, 3, gl.FLOAT, false, 0, 0)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[2])
+        gl.vertexAttribPointer(this.attributes.vcolor, 3, gl.FLOAT, false, 0, 0)
+
+        //gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[3])
+        //gl.vertexAttribPointer(this.attributes.aTexCoord, 2, gl.FLOAT, false, 0, 0)
 
         // Draw call
-        twgl.drawBufferInfo(gl, gl.TRIANGLES, tentBuffers)
+        gl.drawArrays(gl.TRIANGLES, 0, 12);
 
         // Draw the poles
         gl.useProgram(poleShaderProgram.program)

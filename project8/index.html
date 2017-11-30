@@ -14,6 +14,7 @@
 <script src="Libraries/arcball.js"></script>
 <script src="grobject.js"></script>
 <script src="helper.js"></script>
+<script src="texture/images.js"></script>
 
 <script src="ExampleObjects/ground.js"></script>
 
@@ -110,6 +111,81 @@
 	}
 </script>
 
+<script id="stone-vs" type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec3 vcolor;
+    attribute vec2 vTexCoord;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+
+    void main(void) {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = pos.xyz;
+        fNormal = normalize(model * vec4(vnormal,0.0)).xyz;
+        fColor = vcolor;
+        fTexCoord = vTexCoord;
+        gl_Position = proj * pos;
+    }
+</script>
+
+<script id="stone-fs" type="notjs">
+    precision highp float;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform vec3 lightdir;
+    uniform sampler2D texSampler;
+
+
+    vec3 phong(in vec3 toLight) {
+
+        // Light vectors
+        vec3 l = normalize(toLight);
+        vec3 n = normalize(fNormal);
+        vec3 e = normalize(-fPosition);
+        vec3 h = normalize(e+l);
+
+        // Light colors
+        vec3 diffuse_color = fColor;
+        vec3 ambient_color = fColor;
+        vec3 specular_color = vec3(1.0, 1.0, 1.0);
+
+        // Light parameters
+        float specularFocus = 10.0;
+        float specularDense = 0.0;
+        float ambientWeight = 0.3;
+        float diffusiveCoef = 0.9;
+        float diffuseWeight =  diffusiveCoef * (0.5 * (dot(l, n) + 1.0));
+
+        float sWeight = specularDense * pow(max(dot(n,
+                      h), 0.0), specularFocus);
+        return ambient_color * ambientWeight +
+             diffuseWeight * diffuse_color +
+             specular_color * sWeight;
+    }
+
+    void main() {
+        vec4 texColor = texture2D(texSampler,fTexCoord);
+        vec3 dir = normalize(lightdir); 
+        //gl_FragColor = vec4(phong(dir), 1.0);
+        gl_FragColor = vec4(texColor.xyz,1);
+    }
+</script>
 
 <script id="pole-vs" type="notjs">
     precision highp float;

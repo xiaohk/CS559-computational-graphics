@@ -16,7 +16,9 @@ var v3 = v3 || twgl.v3;
                                  poleRadius, numPole, numCircle, height, theta,
                                  stoneScale) {
         this.shaderProgram = undefined
+        this.shaderProgramStone = undefined
         this.buffer = undefined
+        this.bufferStone = undefined
         this.name = name
         this.position = position
         this.size = size
@@ -43,14 +45,14 @@ var v3 = v3 || twgl.v3;
         var gl=drawingState.gl
 
         // Share the shader with all trunks
-        this.shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"]);
+        this.shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"])
+        this.shaderProgramStone = twgl.createProgramInfo(gl,
+                                    ["stone-vs", "stone-fs"])
         
         // Add triangles
         drawCampfire(this.position, this.radius, this.poleRadius, this.numPole,
                      this.numCircle, this.color, this.height, this.theta,
                      triangles) 
-        drawStones(this.position, this.radius + 0.2, 10, this.stoneColor,
-                   triangles, this.stoneScale)
 
         // Convert triangles to webgl array info
         var results = triangleToVertex(triangles)
@@ -65,6 +67,47 @@ var v3 = v3 || twgl.v3;
         }
 
         this.buffer = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
+
+
+        // Clear the variables to draw stone
+        triangles = []
+        vertexPosRaw = []
+        vertexColorsRaw = []
+        vertexNormalRaw = []
+        arrays = []
+        this.bufferStone = null
+
+        drawStones(this.position, this.radius + 0.2, 10, this.stoneColor,
+                   triangles, this.stoneScale)
+        //var Tx_scale = m4.scaling([2,2,2])
+        //addCube(this.position, this.color, triangles, m4.rotationY(0), Tx_scale)
+
+        // Convert triangles to webgl array info
+        var results = triangleToVertex(triangles)
+        vertexPosRaw.push(...results[0])
+        vertexColorsRaw.push(...results[1])
+        vertexNormalRaw.push(...results[2])
+
+        // Generate texture coordinate for the stone
+        var stoneTextureCoord = []
+        for(var i = 0; i < 60; i++){
+            stoneTextureCoord.push(...[0,1, 0,0, 1,1, 1,0, 1,1, 0,0])
+        }
+
+        // Make texture
+        this.textureStone = twgl.createTexture(gl, {
+            target: gl.TEXTURE_2D_ARRAY,
+            source: "https://i.imgur.com/SCvNEHf.jpg"
+        })
+
+        arrays = {
+            vTexCoord : {numComponents:2, data: new Float32Array(stoneTextureCoord)},
+            vpos : {numComponents:3, data: new Float32Array(vertexPosRaw)},
+            vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
+            vcolor : {numComponents:3, data: new Float32Array(vertexColorsRaw)}
+        }
+
+        this.bufferStone = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
     }
 
     CampFire.prototype.draw = function(drawingState) {
@@ -73,6 +116,8 @@ var v3 = v3 || twgl.v3;
         twgl.m4.setTranslation(modelM,this.position,modelM)
 
         var gl = drawingState.gl
+
+        // Draw the campfire
         gl.useProgram(this.shaderProgram.program)
         twgl.setBuffersAndAttributes(gl,this.shaderProgram, this.buffer)
         twgl.setUniforms(this.shaderProgram,{
@@ -82,6 +127,19 @@ var v3 = v3 || twgl.v3;
             cubecolor:this.color,
             model: modelM })
         twgl.drawBufferInfo(gl, gl.TRIANGLES, this.buffer)
+
+        // Draw the stones
+        gl.useProgram(this.shaderProgramStone.program)
+        twgl.setBuffersAndAttributes(gl,this.shaderProgramStone, this.bufferStone)
+        twgl.setUniforms(this.shaderProgramStone,{
+            view:drawingState.view,
+            proj:drawingState.proj,
+            lightdir:drawingState.sunDirection,
+            cubecolor:this.color,
+            model: modelM,
+            texSampler: this.textureStone
+        })
+        twgl.drawBufferInfo(gl, gl.TRIANGLES, this.bufferStone)
     }
 
     CampFire.prototype.center = function(drawingState) {
