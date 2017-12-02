@@ -18,7 +18,10 @@ var v3 = v3 || twgl.v3;
         this.shaderProgram = undefined
         this.shaderProgramStone = undefined
         this.buffer = undefined
-        this.bufferStone = undefined
+        this.buffers = []
+        this.texture = null
+        this.vertexNum = 0
+
         this.name = name
         this.position = position
         this.size = size
@@ -46,8 +49,6 @@ var v3 = v3 || twgl.v3;
 
         // Share the shader with all trunks
         this.shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"])
-        this.shaderProgramStone = twgl.createProgramInfo(gl,
-                                    ["stone-vs", "stone-fs"])
         
         // Add triangles
         drawCampfire(this.position, this.radius, this.poleRadius, this.numPole,
@@ -75,7 +76,16 @@ var v3 = v3 || twgl.v3;
         vertexColorsRaw = []
         vertexNormalRaw = []
         arrays = []
-        this.bufferStone = null
+        
+        // Create Webgl shader for the stones
+        var vertexSource = document.getElementById("stone-vs").text
+        var fragmentSource = document.getElementById("stone-fs").text
+        this.program = createGLProgram(gl, vertexSource, fragmentSource)
+
+        this.attributes = findAttribLocations(gl, this.program,
+            ["vpos", "vnormal", "vcolor", "vTexCoord"])
+        this.uniforms = findUniformLocations(gl, this.program,
+            ["view", "proj", "model", "lightdir"])
 
         drawStones(this.position, this.radius + 0.2, 10, this.stoneColor,
                    triangles, this.stoneScale)
@@ -88,26 +98,24 @@ var v3 = v3 || twgl.v3;
         vertexColorsRaw.push(...results[1])
         vertexNormalRaw.push(...results[2])
 
+
+        this.vertexNum = this.vertexNum + vertexPosRaw.length / 3
+
         // Generate texture coordinate for the stone
-        var stoneTextureCoord = []
+        var texCoord = []
         for(var i = 0; i < 60; i++){
-            stoneTextureCoord.push(...[0,1, 0,0, 1,1, 1,0, 1,1, 0,0])
+            texCoord.push(...[0,1, 0,0, 1,1, 1,0, 1,1, 0,0])
         }
 
-        // Make texture
-        this.textureStone = twgl.createTexture(gl, {
-            target: gl.TEXTURE_2D_ARRAY,
-            source: "https://i.imgur.com/SCvNEHf.jpg"
-        })
-
-        arrays = {
-            vTexCoord : {numComponents:2, data: new Float32Array(stoneTextureCoord)},
-            vpos : {numComponents:3, data: new Float32Array(vertexPosRaw)},
-            vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
-            vcolor : {numComponents:3, data: new Float32Array(vertexColorsRaw)}
-        }
-
-        this.bufferStone = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
+        this.texture = createGLTexture(gl, image_rock2, true)
+        this.buffers[0] = createGLBuffer(gl, new Float32Array(vertexPosRaw),
+            gl.STATIC_DRAW)
+        this.buffers[1] = createGLBuffer(gl, new Float32Array(vertexNormalRaw),
+            gl.STATIC_DRAW)
+        this.buffers[2] = createGLBuffer(gl, new Float32Array(vertexColorsRaw),
+            gl.STATIC_DRAW)
+        this.buffers[3] = createGLBuffer(gl, new Float32Array(texCoord),
+            gl.STATIC_DRAW)
     }
 
     CampFire.prototype.draw = function(drawingState) {
@@ -129,17 +137,38 @@ var v3 = v3 || twgl.v3;
         twgl.drawBufferInfo(gl, gl.TRIANGLES, this.buffer)
 
         // Draw the stones
-        gl.useProgram(this.shaderProgramStone.program)
-        twgl.setBuffersAndAttributes(gl,this.shaderProgramStone, this.bufferStone)
-        twgl.setUniforms(this.shaderProgramStone,{
-            view:drawingState.view,
-            proj:drawingState.proj,
-            lightdir:drawingState.sunDirection,
-            cubecolor:this.color,
-            model: modelM,
-            texSampler: this.textureStone
-        })
-        twgl.drawBufferInfo(gl, gl.TRIANGLES, this.bufferStone)
+        gl.useProgram(this.program)
+        gl.disable(gl.CULL_FACE)
+
+        // Set up uniforms
+        gl.uniformMatrix4fv(this.uniforms.view, gl.FALSE, drawingState.view)
+        gl.uniformMatrix4fv(this.uniforms.proj, gl.FALSE, drawingState.proj)
+        gl.uniformMatrix4fv(this.uniforms.model, gl.FALSE, modelM)
+        gl.uniform3fv(this.uniforms.lightdir, drawingState.sunDirection)
+
+        // Set up the texture
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, this.texture)
+        gl.uniform1i(this.uniforms.uTexture, 1)
+
+        // Set up attributes
+        enableLocations(gl, this.attributes)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[0])
+        gl.vertexAttribPointer(this.attributes.vpos, 3, gl.FLOAT, false, 0, 0)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[1])
+        gl.vertexAttribPointer(this.attributes.vnormal, 3, gl.FLOAT, false, 0, 0)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[2])
+        gl.vertexAttribPointer(this.attributes.vcolor, 3, gl.FLOAT, false, 0, 0)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[3])
+        gl.vertexAttribPointer(this.attributes.vTexCoord, 2, gl.FLOAT, false, 0, 0)
+
+        // Draw call
+        gl.drawArrays(gl.TRIANGLES, 0, this.vertexNum);
+
     }
 
     CampFire.prototype.center = function(drawingState) {

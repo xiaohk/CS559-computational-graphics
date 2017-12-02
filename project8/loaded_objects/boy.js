@@ -33,7 +33,7 @@ var v3 = v3 || twgl.v3;
         var gl=drawingState.gl
 
         // Share the shader with all trunks
-        this.shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"]);
+        this.shaderProgram = twgl.createProgramInfo(gl, ["stone-vs", "stone-fs"]);
 
         // Didn't do texture yet, just paint to one color
         var vertexColorsRaw = []
@@ -41,13 +41,33 @@ var v3 = v3 || twgl.v3;
             vertexColorsRaw.push(...this.color)
         }
 
+        var texture_image = image_boy1
+        if (this.name == "Jack"){
+            texture_image = image_boy2
+        }
+        this.texture = twgl.createTexture(gl, {
+            target: gl.TEXTURE_2D_ARRAY,
+            src: texture_image
+        })
+
+        var myCoord = []
+        for(var i = 0; i < cowboy_data["object"]["texcoord"]["data"].length; i++){
+            var temp = cowboy_data["object"]["texcoord"]["data"][i]
+            if (i%2 == 1){
+                myCoord.push(1 - temp)
+            } else {
+                myCoord.push(temp)
+            }
+        }
+
         var arrays = {
             vpos : {numComponents : 3,
                     data: cowboy_data["object"]["vertex"]["data"]},
             vnormal : {numComponents : 3,
-                       data : cowboy_data["object"]["normal"]["data"]},
+                      data : cowboy_data["object"]["normal"]["data"]},
             vcolor : {numComponents : 3,
-                      data : vertexColorsRaw}
+                      data : vertexColorsRaw},
+            vTexCoord : {numComponents : 2, data : myCoord}
         }
 
         this.buffer = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
@@ -65,7 +85,9 @@ var v3 = v3 || twgl.v3;
             view:drawingState.view,
             proj:drawingState.proj,
             lightdir:drawingState.sunDirection,
-            model: modelM })
+            model: modelM,
+            texSampler: this.texture
+        })
         twgl.drawBufferInfo(gl, gl.TRIANGLES, this.buffer)
     }
 

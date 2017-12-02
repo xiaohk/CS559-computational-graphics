@@ -39,8 +39,6 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         this.name = name
         this.tentProgram = null
         this.buffers = []
-        this.tentAttributes = []
-        this.tentUniforms = []
         this.texture = null
         this.position = position || [0,0,0]
         this.size = size || 1.0
@@ -70,13 +68,13 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         }
 
         // Create Webgl shader for the tent
-        var vertexSource = document.getElementById("trunk-vs").text
-        var fragmentSource = document.getElementById("trunk-fs").text
+        var vertexSource = document.getElementById("stone-vs").text
+        var fragmentSource = document.getElementById("stone-fs").text
 
         this.program = createGLProgram(gl, vertexSource, fragmentSource)
 
         this.attributes = findAttribLocations(gl, this.program,
-            ["vpos", "vnormal", "vcolor"])
+            ["vpos", "vnormal", "vcolor", "vTexCoord"])
         this.uniforms = findUniformLocations(gl, this.program,
             ["view", "proj", "model", "lightdir"])
 
@@ -91,29 +89,19 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         vertexNormalRaw.push(...results[2])
 
         // Make vertex coordinates
-        var texCoord = []
-        for(var i = 0; i < triangles.length; i++){
-            texCoord.push(...[0.5,1, 0,0, 1,0])
-        }
+        var texCoord = [0.5,0.5, 0,0, 1,0, 0.5,0.5, 1,0, 1,1,
+                        0.5,0.5, 1,1, 0,1, 0,5,0.5, 0,1, 0,0]
 
-        var image = new Image()
-        image.src = image_rock1
-
-        this.texture = createGLTexture(gl, image, true)
+        this.texture = createGLTexture(gl, image_canvas1, true)
         this.buffers[0] = createGLBuffer(gl, new Float32Array(vertexPosRaw),
             gl.STATIC_DRAW)
         this.buffers[1] = createGLBuffer(gl, new Float32Array(vertexNormalRaw),
             gl.STATIC_DRAW)
         this.buffers[2] = createGLBuffer(gl, new Float32Array(vertexColorsRaw),
             gl.STATIC_DRAW)
-        //this.buffers[3] = createGLBuffer(gl, new Float32Array(texCoord),
-        //    gl.STATIC_DRAW)
+        this.buffers[3] = createGLBuffer(gl, new Float32Array(texCoord),
+            gl.STATIC_DRAW)
         
-        console.log(texCoord.length)
-        console.log(triangles.length)
-        console.log(vertexPosRaw.length)
-
-
         if (!poleBuffers) {
             // Clear the cache
             triangles = []
@@ -188,6 +176,11 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         gl.uniformMatrix4fv(this.uniforms.model, gl.FALSE, modelM)
         gl.uniform3fv(this.uniforms.lightdir, drawingState.sunDirection)
 
+        // Set up the texture
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, this.texture)
+        gl.uniform1i(this.uniforms.uTexture, 0)
+
         // Set up attributes
         enableLocations(gl, this.attributes)
 
@@ -200,8 +193,8 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[2])
         gl.vertexAttribPointer(this.attributes.vcolor, 3, gl.FLOAT, false, 0, 0)
 
-        //gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[3])
-        //gl.vertexAttribPointer(this.attributes.aTexCoord, 2, gl.FLOAT, false, 0, 0)
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[3])
+        gl.vertexAttribPointer(this.attributes.vTexCoord, 2, gl.FLOAT, false, 0, 0)
 
         // Draw call
         gl.drawArrays(gl.TRIANGLES, 0, 12);

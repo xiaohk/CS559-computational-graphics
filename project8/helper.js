@@ -235,10 +235,10 @@ function addCube(center, color, triangles, Tx_rotate, Tx_scale){
     localTriangles.push([vertexes[5], vertexes[1], vertexes[6], color])
     localTriangles.push([vertexes[2], vertexes[6], vertexes[1], color])
     // Back
-    localTriangles.push([vertexes[3], vertexes[4], vertexes[7], color])
-    localTriangles.push([vertexes[4], vertexes[8], vertexes[7], color])
+    localTriangles.push([vertexes[7], vertexes[3], vertexes[8], color])
+    localTriangles.push([vertexes[4], vertexes[8], vertexes[3], color])
     // Top
-    localTriangles.push([vertexes[7], vertexes[8], vertexes[5], color])
+    localTriangles.push([vertexes[8], vertexes[5], vertexes[7], color])
     localTriangles.push([vertexes[6], vertexes[7], vertexes[5], color])
     // Bottom
     localTriangles.push([vertexes[2], vertexes[1], vertexes[3], color])
