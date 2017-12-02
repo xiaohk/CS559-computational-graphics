@@ -15,7 +15,7 @@ var my_trunk2 = new Trunk(name = "Trunk2",
                           color = [68/255, 36/255, 29/255], 
                           radius = 0.8,
                           numCirlce = 32,
-                          height = 1.3)
+                          height = 1.2)
 grobjects.push(my_trunk1)
 grobjects.push(my_trunk2)
 

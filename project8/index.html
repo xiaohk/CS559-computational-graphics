@@ -153,7 +153,7 @@
     uniform sampler2D texSampler;
 
 
-    vec3 phong(in vec3 toLight) {
+    vec3 phong(in vec3 toLight, vec3 color) {
 
         // Light vectors
         vec3 l = normalize(toLight);
@@ -162,8 +162,8 @@
         vec3 h = normalize(e+l);
 
         // Light colors
-        vec3 diffuse_color = fColor;
-        vec3 ambient_color = fColor;
+        vec3 diffuse_color = color;
+        vec3 ambient_color = color;
         vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
         // Light parameters
@@ -184,7 +184,9 @@
         vec4 texColor = texture2D(texSampler,fTexCoord);
         vec3 dir = normalize(lightdir); 
         //gl_FragColor = vec4(phong(dir), 1.0);
-        gl_FragColor = vec4(texColor.xyz,1);
+        //gl_FragColor = vec4(texColor.xyz,1);
+        vec3 temp_color = texColor.xyz;
+        gl_FragColor = vec4(phong(dir, temp_color), 1.0);
     }
 </script>
 

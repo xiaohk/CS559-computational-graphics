@@ -37,11 +37,13 @@ var v3 = v3 || twgl.v3;
         var gl=drawingState.gl
 
         // Share the shader with all trunks
-        this.shaderProgram = twgl.createProgramInfo(gl, ["trunk-vs", "trunk-fs"]);
+        this.shaderProgram = twgl.createProgramInfo(gl, ["stone-vs", "stone-fs"]);
         
         // Add triangles
         addCylinder(this.position, this.radius, this.numCircle,
                     this.color, this.height, triangles)
+
+        console.log(triangles.length)
 
         // Convert triangles to webgl array info
         var results = triangleToVertex(triangles)
@@ -49,10 +51,44 @@ var v3 = v3 || twgl.v3;
         vertexColorsRaw.push(...results[1])
         vertexNormalRaw.push(...results[2])
 
+        // Try to make a texture coordinate for this cylinder
+        var texCoord = []
+        var slice = 1 / this.numCircle / 2
+        for(var i = 0; i < triangles.length; i++){
+            // The top and bottom circles
+            if (i < triangles.length/2){
+                for (var j = 0; j < 3; j++){
+                    var rd = 0.01 * Math.random()
+                    texCoord.push(...[0.5+rd, 0.5+rd])
+                }
+            } else {
+                var t = i - triangles.length/2
+                if (t % 2 == 0){
+                    texCoord.push(...[t * slice, 0, 
+                                     t * slice, 1,
+                                     ((t+2) % (triangles.length/2)) * slice, 0])
+                    texCoord.push(...[t * slice, 1,
+                                     ((t+2) % (triangles.length/2)) * slice, 1,
+                                     ((t+2) % (triangles.length/2)) * slice, 0])
+                }
+            }
+        }
+
+        var textureImage = image_trunk1
+        if (this.name == "Trunk1"){
+            textureImage = image_trunk2
+        }
+        this.texture = twgl.createTexture(gl, {
+            target: gl.TEXTURE_2D_ARRAY,
+            min: gl.NEAREST_MIPMAP_LINEAR,
+            src: textureImage
+        })
+
         var arrays = {
             vpos : {numComponents:3, data: new Float32Array(vertexPosRaw)},
             vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
-            vcolor : {numComponents:3, data: new Float32Array(vertexColorsRaw)}
+            vcolor : {numComponents:3, data: new Float32Array(vertexColorsRaw)},
+            vTexCoord : {numComponents : 2, data : texCoord}
         }
 
         this.buffer = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
@@ -71,7 +107,9 @@ var v3 = v3 || twgl.v3;
             proj:drawingState.proj,
             lightdir:drawingState.sunDirection,
             cubecolor:this.color,
-            model: modelM })
+            model: modelM,
+            texSampler: this.texture
+        })
         twgl.drawBufferInfo(gl, gl.TRIANGLES, this.buffer)
     }
     Trunk.prototype.center = function(drawingState) {

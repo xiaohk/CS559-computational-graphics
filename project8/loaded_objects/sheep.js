@@ -69,8 +69,7 @@ var v3 = v3 || twgl.v3;
                        data : sheep_data["object"]["normal"]["data"]},
             vcolor : {numComponents : 3,
                       data : vertexColorsRaw},
-            vTexCoord : {numComponents : 2,
-                      data : myCoord}        
+            vTexCoord : {numComponents : 2, data : myCoord}        
         }
 
         this.buffer = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
