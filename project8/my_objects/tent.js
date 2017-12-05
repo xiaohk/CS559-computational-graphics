@@ -90,7 +90,7 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
 
         // Make vertex coordinates
         var texCoord = [0.5,0.5, 0,0, 1,0, 0.5,0.5, 1,0, 1,1,
-                        0.5,0.5, 1,1, 0,1, 0,5,0.5, 0,1, 0,0]
+                        0.5,0.5, 1,1, 0,1, 0,0, 0.5,0.5, 1,0]
 
         this.texture = createGLTexture(gl, image_canvas1, true)
         this.buffers[0] = createGLBuffer(gl, new Float32Array(vertexPosRaw),

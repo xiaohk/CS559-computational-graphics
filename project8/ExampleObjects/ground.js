@@ -38,6 +38,10 @@ var groundPlaneSize = groundPlaneSize || 5;
         -groundPlaneSize, 0,  groundPlaneSize
     ];
 
+    var normals = [0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0]
+    var texCoord = [0,1, 1,1, 1,0, 0,1, 1,0, 0,0]
+    var colors = [1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1]
+
     // since there will be one of these, just keep info in the closure
     var shaderProgram = undefined;
     var buffers = undefined;
@@ -61,17 +65,34 @@ var groundPlaneSize = groundPlaneSize || 5;
             // an abbreviation...
             var gl = drawingState.gl;
             if (!shaderProgram) {
-                shaderProgram = twgl.createProgramInfo(gl,["ground-vs","ground-fs"]);
+                shaderProgram = twgl.createProgramInfo(gl,["stone-vs","stone-fs"]);
             }
-            var arrays = { vpos : {numComponents:3, data:vertexPos }};
+            var arrays = { vpos : {numComponents:3, data:vertexPos },
+                           vnormal : {numComponents:3, data:normals},
+                           vcolor : {numComponents:3, data:colors},
+                           vTexCoord : {numComponents : 2, data : texCoord}
+            };
+
+            this.texture = twgl.createTexture(gl, {
+                target: gl.TEXTURE_2D_ARRAY,
+                min: gl.NEAREST_MIPMAP_LINEAR,
+                src: image_grass
+            })
+
             buffers = twgl.createBufferInfoFromArrays(gl,arrays);
        },
         draw : function(drawingState) {
             var gl = drawingState.gl;
+            var modelM = twgl.m4.scaling([1,1,1])
+
             gl.useProgram(shaderProgram.program);
             twgl.setBuffersAndAttributes(gl,shaderProgram,buffers);
             twgl.setUniforms(shaderProgram,{
-                view:drawingState.view, proj:drawingState.proj
+                view:drawingState.view, proj:drawingState.proj,
+                 lightdir:drawingState.sunDirection,
+                cubecolor:this.color,
+                model: modelM,
+                texSampler: this.texture
             });
             twgl.drawBufferInfo(gl, gl.TRIANGLES, buffers);
         },

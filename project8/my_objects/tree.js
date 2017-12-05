@@ -54,11 +54,11 @@ var v3 = v3 || twgl.v3;
         for(var i = 0; i < result[0].length; i++){
             addCone(result[0][i], result[1][i], this.numCircle, this.color,
                 result[2][i], triangles, m4.rotationY(this.theta))
-
-            addCylinder(this.position, this.trunkRadius, this.trunkNumCircle,
+        }
+        addCylinder(this.position, this.trunkRadius, this.trunkNumCircle,
                         this.trunkColor, this.heightRatio * this.height / 2,
                         triangles)
-        }
+
 
         // Convert triangles to webgl array info
         var results = triangleToVertex(triangles)

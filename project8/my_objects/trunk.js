@@ -43,8 +43,6 @@ var v3 = v3 || twgl.v3;
         addCylinder(this.position, this.radius, this.numCircle,
                     this.color, this.height, triangles)
 
-        console.log(triangles.length)
-
         // Convert triangles to webgl array info
         var results = triangleToVertex(triangles)
         vertexPosRaw.push(...results[0])
@@ -65,11 +63,11 @@ var v3 = v3 || twgl.v3;
                 var t = i - triangles.length/2
                 if (t % 2 == 0){
                     texCoord.push(...[t * slice, 0, 
-                                     t * slice, 1,
-                                     ((t+2) % (triangles.length/2)) * slice, 0])
+                                      t * slice, 1,
+                                      (t+2) * slice, 0])
                     texCoord.push(...[t * slice, 1,
-                                     ((t+2) % (triangles.length/2)) * slice, 1,
-                                     ((t+2) % (triangles.length/2)) * slice, 0])
+                                      (t+2) * slice, 1,
+                                      (t+2) * slice, 0])
                 }
             }
         }
