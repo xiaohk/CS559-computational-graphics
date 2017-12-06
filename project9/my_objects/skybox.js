@@ -1,5 +1,5 @@
 /**
- * Created by Jay Wong on 12/5/17.
+ * Created by Jay Wong on 11/19/17.
  */
 
 // Global object list
@@ -11,16 +11,18 @@ var v3 = v3 || twgl.v3;
 (function() {
     "use strict"
 
-    // constructor for Skybox
-    Skybox = function Skybox(name, position, size, color, rotate, scale) {
+    // constructor for Trunk
+    Skybox = function Skybox(name, position, size) {
         this.shaderProgram = undefined
+        this.shaderProgramStone = undefined
         this.buffer = undefined
+        this.buffers = []
+        this.texture = null
+        this.vertexNum = 0
+
         this.name = name
-        this.position = position || [0,0,0]
-        this.size = size || 1.0
-        this.color = color || [.7,.8,.9]
-        this.rotate = rotate
-        this.scale = scale
+        this.position = position
+        this.size = size
     }
 
     // One of the object necessary function
@@ -34,11 +36,20 @@ var v3 = v3 || twgl.v3;
         // Get the gl content
         var gl=drawingState.gl
 
-        // Share the shader with all trunks
-        this.shaderProgram = twgl.createProgramInfo(gl, ["stone-vs", "stone-fs"]);
-       
-        // Create a cube
-        addCube(this.position, this.color, triangles, this.rotate, this.scale)
+        // Create Webgl shader for the stones
+        var vertexSource = document.getElementById("skybox-vs").text
+        var fragmentSource = document.getElementById("skybox-fs").text
+        this.program = createGLProgram(gl, vertexSource, fragmentSource)
+
+        this.attributes = findAttribLocations(gl, this.program,
+            ["vpos"])
+        this.uniforms = findUniformLocations(gl, this.program,
+            ["view", "proj", "model", "lightdir"])
+
+        //drawStones(this.position, 2.2, 1, [1,1,1],
+        //           triangles, [1,1,1])
+        addCenterCube(this.position, [0,0,0], triangles, m4.rotationY(0),
+                m4.scaling([1,1,1]))
 
         // Convert triangles to webgl array info
         var results = triangleToVertex(triangles)
@@ -46,35 +57,47 @@ var v3 = v3 || twgl.v3;
         vertexColorsRaw.push(...results[1])
         vertexNormalRaw.push(...results[2])
 
+        this.vertexNum = this.vertexNum + vertexPosRaw.length / 3
+
+        // Generate texture coordinate for the stone
         var texCoord = []
         for(var i = 0; i < 6; i++){
             texCoord.push(...[0,1, 0,0, 1,1, 1,0, 1,1, 0,0])
         }
 
-        console.log(vertexPosRaw.length)
-        console.log(texCoord.length)
+        // this.texture = createGLTexture(gl, image_rock2, true)
+        this.texture = gl.createTexture()
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.texture)
 
-        console.log(typeof(image_posx))
-        this.texture = twgl.createTexture(gl, {
-            target: gl.TEXTURE_CUBE_MAP,
-            src: [
-                image_posx.src,
-                image_negx.src,
-                image_posy.src,
-                image_negy.src,
-                image_posz.src,
-                image_negz.src
-            ]
-        })
+        // Map 6 planes
+        gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA,
+                        gl.UNSIGNED_BYTE, image_posx)
+        gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA,
+                        gl.UNSIGNED_BYTE, image_negx)
+        gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA,
+                        gl.UNSIGNED_BYTE, image_posy)
+        gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA,
+                        gl.UNSIGNED_BYTE, image_negy)
+        gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA,
+                        gl.UNSIGNED_BYTE, image_posz)
+        gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA,
+                        gl.UNSIGNED_BYTE, image_negz)
 
-        var arrays = {
-            vpos : {numComponents:3, data: new Float32Array(vertexPosRaw)},
-            vnormal : {numComponents:3, data: new Float32Array(vertexNormalRaw)},
-            vcolor : {numComponents:3, data: new Float32Array(vertexColorsRaw)},
-            vTexCoord : {numComponents : 2, data : texCoord}
-        }
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+        gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
 
-        this.buffer = twgl.createBufferInfoFromArrays(drawingState.gl,arrays)
+        this.buffers[0] = createGLBuffer(gl, new Float32Array(vertexPosRaw),
+            gl.STATIC_DRAW)
+        this.buffers[1] = createGLBuffer(gl, new Float32Array(vertexNormalRaw),
+            gl.STATIC_DRAW)
+        this.buffers[2] = createGLBuffer(gl, new Float32Array(vertexColorsRaw),
+            gl.STATIC_DRAW)
+        this.buffers[3] = createGLBuffer(gl, new Float32Array(texCoord),
+            gl.STATIC_DRAW)
     }
 
     Skybox.prototype.draw = function(drawingState) {
@@ -83,17 +106,25 @@ var v3 = v3 || twgl.v3;
         twgl.m4.setTranslation(modelM,this.position,modelM)
 
         var gl = drawingState.gl
-        gl.useProgram(this.shaderProgram.program)
-        twgl.setBuffersAndAttributes(gl,this.shaderProgram, this.buffer)
-        twgl.setUniforms(this.shaderProgram,{
-            view:drawingState.view,
-            proj:drawingState.proj,
-            lightdir:drawingState.sunDirection,
-            cubecolor:this.color,
-            model: modelM,
-            texSampler: this.texture
-        })
-        twgl.drawBufferInfo(gl, gl.TRIANGLES, this.buffer)
+
+        // Draw the stones
+        gl.useProgram(this.program)
+        gl.disable(gl.CULL_FACE)
+
+        // Set up uniforms
+        gl.uniformMatrix4fv(this.uniforms.view, gl.FALSE, drawingState.view)
+        gl.uniformMatrix4fv(this.uniforms.proj, gl.FALSE, drawingState.proj)
+        gl.uniformMatrix4fv(this.uniforms.model, gl.FALSE, modelM)
+        gl.uniform3fv(this.uniforms.lightdir, drawingState.sunDirection)
+
+        // Set up attributes
+        enableLocations(gl, this.attributes)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[0])
+        gl.vertexAttribPointer(this.attributes.vpos, 3, gl.FLOAT, false, 0, 0)
+
+        // Draw call
+        gl.drawArrays(gl.TRIANGLES, 0, this.vertexNum);
     }
 
     Skybox.prototype.center = function(drawingState) {
@@ -101,11 +132,8 @@ var v3 = v3 || twgl.v3;
     }
 })()
 
-//Skybox(name, position, size, color, rotate, scale)
+
 var my_skybox = new Skybox(name = "Skybox",
-                          position = [1,0,1],
-                          size = 1,
-                          color = [1, 0, 0], 
-                          rotate = m4.rotationY(0),
-                          scale = m4.scaling([1,1,1]))
+                          position = [0,0,0],
+                          size = 100)
 grobjects.push(my_skybox)

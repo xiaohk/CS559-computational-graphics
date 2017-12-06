@@ -256,6 +256,46 @@ function addCube(center, color, triangles, Tx_rotate, Tx_scale){
     }
 }
 
+// Draw a cube
+function addCenterCube(center, color, triangles, Tx_rotate, Tx_scale){
+    var cubeToWorld = m4.multiply(m4.multiply(Tx_scale, Tx_rotate),
+        m4.translation(center))
+
+    var vertexes = [[0, -0.5, 0], [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5],
+                    [0.5, -0.5, -0.5], [-0.5, -0.5, -0.5], [-0.5, 0.5, 0.5],
+                    [0.5, 0.5, 0.5], [0.5, 0.5, -0.5], [-0.5, 0.5, -0.5]]
+
+    // Transform the vertexes
+    for(var i = 0; i < vertexes.length; i++){
+        vertexes[i] =  m4.transformPoint(cubeToWorld, vertexes[i])
+    }
+
+    var localTriangles = []
+    // Front
+    localTriangles.push([vertexes[5], vertexes[1], vertexes[6], color])
+    localTriangles.push([vertexes[2], vertexes[6], vertexes[1], color])
+    // Back
+    localTriangles.push([vertexes[7], vertexes[3], vertexes[8], color])
+    localTriangles.push([vertexes[4], vertexes[8], vertexes[3], color])
+    // Top
+    localTriangles.push([vertexes[8], vertexes[5], vertexes[7], color])
+    localTriangles.push([vertexes[6], vertexes[7], vertexes[5], color])
+    // Bottom
+    localTriangles.push([vertexes[2], vertexes[1], vertexes[3], color])
+    localTriangles.push([vertexes[4], vertexes[3], vertexes[1], color])
+    // Left
+    localTriangles.push([vertexes[5], vertexes[8], vertexes[1], color])
+    localTriangles.push([vertexes[4], vertexes[1], vertexes[8], color])
+    // Right
+    localTriangles.push([vertexes[6], vertexes[2], vertexes[7], color])
+    localTriangles.push([vertexes[3], vertexes[7], vertexes[2], color])
+    
+    // Push local triangles into global triangles
+    for(var i = 0; i < localTriangles.length; i++){
+        triangles.push(localTriangles[i])
+    }
+}
+
 
 // Draw the campfire
 function drawCampfire(center, radius, poleRadius, num, numCircle, color, height,

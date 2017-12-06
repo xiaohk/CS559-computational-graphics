@@ -184,43 +184,47 @@
     void main() {
         vec4 texColor = texture2D(texSampler,fTexCoord);
         vec3 dir = normalize(lightdir); 
-        //gl_FragColor = vec4(phong(dir), 1.0);
-        //gl_FragColor = vec4(texColor.xyz,1);
         vec3 temp_color = texColor.xyz;
         gl_FragColor = vec4(phong(dir, temp_color), 1.0);
     }
 </script>
 
-<script id="skybox-vs" type="notjs">
-    uniform mat4 u_viewInverse;
-    uniform mat4 u_world;
-    uniform mat4 u_worldViewProjection;
-    uniform mat4 u_worldInverseTranspose;
+<script id="skybox-vs", type="notjs">
+    precision highp float;
 
-    attribute vec4 a_position;
-    attribute vec3 a_normal;
-    varying vec3 v_normal;
-    varying vec3 v_surfaceToView;
+    attribute vec3 vpos;
+
+    varying vec3 fPosition;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+    uniform samplerCube texSamplerCube;
 
     void main() {
-        v_normal = (u_worldInverseTranspose * vec4(a_normal, 0)).xyz;
-        v_surfaceToView = (u_viewInverse[3] - (u_world * a_position)).xyz;
-        gl_Position = u_worldViewProjection * a_position;
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = vpos;
+        gl_Position = proj * pos;
     }
 </script>
 
-<script id="skybox-fs" type="notjs">
+<script id="skybox-fs", type="notjs">
     precision highp float;
 
-    uniform samplerCube u_texture;
-    varying vec3 v_surfaceToView;
-    varying vec3 v_normal;
-    
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+    uniform samplerCube texSamplerCube;
+
+    varying vec3 fPosition;
+
     void main() {
-        vec3 normal = normalize(v_normal);
-        vec3 surfaceToView = normalize(v_surfaceToView);
-        vec4 color = textureCube(u_texture, -reflect(surfaceToView, normal));
-        gl_FragColor = color;
+        vec4 texColorCube = textureCube(texSamplerCube, fPosition);
+        gl_FragColor = vec4(texColorCube.xyz, 1.0);
     }
 </script>
 
