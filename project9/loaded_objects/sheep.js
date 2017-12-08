@@ -38,7 +38,7 @@ var v3 = v3 || twgl.v3;
         var gl=drawingState.gl
 
         // Share the shader with all trunks
-        this.shaderProgram = twgl.createProgramInfo(gl, ["stone-vs", "stone-fs"]);
+        this.shaderProgram = twgl.createProgramInfo(gl, ["tent-vs", "tent-fs"]);
 
         // Didn't do texture yet, just paint to one color
         var vertexColorsRaw = []
@@ -46,10 +46,24 @@ var v3 = v3 || twgl.v3;
             vertexColorsRaw.push(...this.color)
         }
 
-        this.texture = twgl.createTexture(gl, {
+        this.texture2 = twgl.createTexture(gl, {
             target: gl.TEXTURE_2D_ARRAY,
             src: image_sheep1
         })
+
+        var normal_texture
+        if (this.name == "Sheep1"){
+            normal_texture = image_normal2
+        } else if (this.name == "Sheep2"){
+            normal_texture = image_normal3
+        } else {
+            normal_texture = image_normal4
+        }
+        this.texture1 = twgl.createTexture(gl, {
+            target: gl.TEXTURE_2D_ARRAY,
+            src: normal_texture
+        })
+
 
         // Re-parse the coordinate 
         var myCoord = []
@@ -138,7 +152,8 @@ var v3 = v3 || twgl.v3;
             proj:drawingState.proj,
             lightdir:drawingState.sunDirection,
             model: modelM,
-            texSampler: this.texture
+            texSampler1: this.texture1,
+            texSampler2: this.texture2
         })
         twgl.drawBufferInfo(gl, gl.TRIANGLES, this.buffer)
     }

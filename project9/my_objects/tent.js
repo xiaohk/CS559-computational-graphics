@@ -68,15 +68,15 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         }
 
         // Create Webgl shader for the tent
-        var vertexSource = document.getElementById("stone-vs").text
-        var fragmentSource = document.getElementById("stone-fs").text
+        var vertexSource = document.getElementById("tent-vs").text
+        var fragmentSource = document.getElementById("tent-fs").text
 
         this.program = createGLProgram(gl, vertexSource, fragmentSource)
 
         this.attributes = findAttribLocations(gl, this.program,
             ["vpos", "vnormal", "vcolor", "vTexCoord"])
         this.uniforms = findUniformLocations(gl, this.program,
-            ["view", "proj", "model", "lightdir"])
+            ["view", "proj", "model", "lightdir", "texSampler1", "texSampler2"])
 
         // Add triangles
         addTent(this.position, this.width, this.height, this.color,
@@ -92,7 +92,9 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
         var texCoord = [0.5,0.5, 0,0, 1,0, 0.5,0.5, 1,0, 1,1,
                         0.5,0.5, 1,1, 0,1, 0,0, 0.5,0.5, 1,0]
 
-        this.texture = createGLTexture(gl, image_canvas1, true)
+        this.texture1 = createGLTexture(gl, image_normal1, true)
+        this.texture2 = createGLTexture(gl, image_canvas1, true)
+
         this.buffers[0] = createGLBuffer(gl, new Float32Array(vertexPosRaw),
             gl.STATIC_DRAW)
         this.buffers[1] = createGLBuffer(gl, new Float32Array(vertexNormalRaw),
@@ -178,8 +180,12 @@ function addTent(center, width, height, color, triangles, outVertexes=null){
 
         // Set up the texture
         gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, this.texture)
-        gl.uniform1i(this.uniforms.uTexture, 0)
+        gl.bindTexture(gl.TEXTURE_2D, this.texture1)
+        gl.uniform1i(this.uniforms.texSampler1, 0)
+
+        gl.activeTexture(gl.TEXTURE1)
+        gl.bindTexture(gl.TEXTURE_2D, this.texture2)
+        gl.uniform1i(this.uniforms.texSampler2, 1)
 
         // Set up attributes
         enableLocations(gl, this.attributes)

@@ -143,7 +143,7 @@ window.onload = function() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         // figure out the transforms
-        var projM = twgl.m4.perspective(fov, 1, 0.1, 100);
+        var projM = twgl.m4.perspective(fov, 1, 0.1, 200000);
         var cameraM = twgl.m4.lookAt(lookFrom,lookAt,[0,1,0]);
         var viewM = twgl.m4.inverse(cameraM);
 

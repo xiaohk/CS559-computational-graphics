@@ -20,7 +20,7 @@ var grobjects = grobjects || [];
 // a global variable to set the ground plane size, so we can easily adjust it
 // in the html file (before things run
 // this is the +/- in the X and Z direction (so things will go from -5 to +5 by default)
-var groundPlaneSize = groundPlaneSize || 50;
+var groundPlaneSize = groundPlaneSize || 20;
 
 // now, I make a function that adds an object to that list
 // there's a funky thing here where I have to not only define the function, but also
@@ -65,7 +65,7 @@ var groundPlaneSize = groundPlaneSize || 50;
             // an abbreviation...
             var gl = drawingState.gl;
             if (!shaderProgram) {
-                shaderProgram = twgl.createProgramInfo(gl,["stone-vs","stone-fs"]);
+                shaderProgram = twgl.createProgramInfo(gl,["tent-vs","tent-fs"]);
             }
             var arrays = { vpos : {numComponents:3, data:vertexPos },
                            vnormal : {numComponents:3, data:normals},
@@ -77,6 +77,12 @@ var groundPlaneSize = groundPlaneSize || 50;
                 target: gl.TEXTURE_2D_ARRAY,
                 min: gl.NEAREST_MIPMAP_LINEAR,
                 src: image_negy
+            })
+
+            this.texture1 = twgl.createTexture(gl, {
+                target: gl.TEXTURE_2D_ARRAY,
+                min: gl.NEAREST_MIPMAP_LINEAR,
+                src: image_normal1
             })
 
             buffers = twgl.createBufferInfoFromArrays(gl,arrays);
@@ -92,7 +98,8 @@ var groundPlaneSize = groundPlaneSize || 50;
                  lightdir:drawingState.sunDirection,
                 cubecolor:this.color,
                 model: modelM,
-                texSampler: this.texture
+                texSampler2: this.texture,
+                texSampler1: this.texture1
             });
             twgl.drawBufferInfo(gl, gl.TRIANGLES, buffers);
         },

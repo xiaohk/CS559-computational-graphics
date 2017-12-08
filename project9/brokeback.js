@@ -66,6 +66,14 @@ var myBoy2 = new Boy(name = "Ennis",
 grobjects.push(myBoy1)
 grobjects.push(myBoy2)
 
+// +++++++++++++++++++++++ Bottle ++++++++++++++++++++++++++++++++++++
+var bottle = new Bottle(name = "Bottle",
+                        position = [0, 0.5, 4],
+                        size = 0.005,
+                        color = [1,0,0],
+                        theta = 0)
+grobjects.push(bottle)
+
 // +++++++++++++++++++++++ Campfire +++++++++++++++++++++++++++++++++++
 
 var myCampFire = new CampFire(name = "campfire",

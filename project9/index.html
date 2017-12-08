@@ -31,6 +31,8 @@
 <script src="loaded_objects/sheep.js"></script>
 <script src="loaded_objects/boyData.js"></script>
 <script src="loaded_objects/boy.js"></script>
+<script src="loaded_objects/bottleData.js"></script>
+<script src="loaded_objects/bottle.js"></script>
 
 <!-- Scene description files -->
 <script src="brokeback.js"></script>
@@ -113,6 +115,100 @@
 	}
 </script>
 
+<script id="glass-vs" type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec3 vcolor;
+    attribute vec2 vTexCoord;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+
+    void main(void) {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = pos.xyz;
+        fNormal = normalize(model * vec4(vnormal,0.0)).xyz;
+        fColor = vcolor;
+        fTexCoord = vTexCoord;
+        gl_Position = proj * pos;
+    }
+</script>
+
+<script id="glass-fs" type="notjs">
+    precision highp float;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform vec3 lightdir;
+    uniform sampler2D texSampler;
+
+
+    vec3 phong(in vec3 toLight, vec3 color) {
+
+        // Light vectors
+        vec3 l = normalize(toLight);
+        vec3 n = normalize(fNormal);
+        vec3 e = normalize(-fPosition);
+        vec3 h = normalize(e+l);
+
+        // Light colors
+        vec3 diffuse_color = color;
+        vec3 ambient_color = color;
+        vec3 specular_color = vec3(1.0, 1.0, 1.0);
+
+        // Light parameters
+        float specularFocus = 10.0;
+        float specularDense = 0.0;
+        float ambientWeight = 0.3;
+        float diffusiveCoef = 0.9;
+        float diffuseWeight =  diffusiveCoef * (0.5 * (dot(l, n) + 1.0));
+
+        float sWeight = specularDense * pow(max(dot(n,
+                      h), 0.0), specularFocus);
+        return ambient_color * ambientWeight +
+             diffuseWeight * diffuse_color +
+             specular_color * sWeight;
+    }
+
+    void main() {
+        // Compute the back wall color
+        vec4 texColor = texture2D(texSampler,fTexCoord);
+        vec3 dir = normalize(lightdir); 
+        vec3 temp_color = texColor.xyz;
+        vec3 back_color = phong(dir, temp_color);
+
+        const float l = 1.0;
+        const float ior = 1.33333;
+        const float size = 3.0;
+
+        vec3 r = normalize(fPosition);
+        vec3 n = normalize(fNormal);
+        float cos_theta1 = dot(-r, n);
+        float sin_theta1 = sqrt(1.0 - cos_theta1 * cos_theta1);
+        float sin_theta2 = ior * sin_theta1;
+        float cos_theta2 = sqrt(1.0 - sin_theta2 * sin_theta2);
+        vec3 p = cross(n, cross(r,n));
+        vec3 out_r = normalize(cos_theta2 * (-n) + sin_theta2 * p);
+        float d = (l - fPosition.z) / out_r.z;
+        vec3 hit_point = fPosition + d * out_r;
+        vec4 color = texture2D(texSampler, vec2(hit_point.x, hit_point.y));
+        gl_FragColor = color;
+    }
+</script>
+
 <script id="stone-vs" type="notjs">
     precision highp float;
 
@@ -188,6 +284,88 @@
         gl_FragColor = vec4(phong(dir, temp_color), 1.0);
     }
 </script>
+
+<script id="tent-vs" type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec3 vcolor;
+    attribute vec2 vTexCoord;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+
+    void main(void) {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = pos.xyz;
+        fNormal = normalize(model * vec4(vnormal,0.0)).xyz;
+        fColor = vcolor;
+        fTexCoord = vTexCoord;
+        gl_Position = proj * pos;
+    }
+</script>
+
+<script id="tent-fs" type="notjs">
+    precision highp float;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform vec3 lightdir;
+    uniform mat4 model;
+    uniform sampler2D texSampler1;
+    uniform sampler2D texSampler2;
+
+    vec3 phong(in vec3 toLight, vec3 color, vec3 normal) {
+
+        // Light vectors
+        vec3 l = normalize(toLight);
+        vec3 n = normalize(normal);
+        vec3 e = normalize(-fPosition);
+        vec3 h = normalize(e+l);
+
+        // Light colors
+        vec3 diffuse_color = color;
+        vec3 ambient_color = color;
+        vec3 specular_color = vec3(1.0, 1.0, 1.0);
+
+        // Light parameters
+        float specularFocus = 10.0;
+        float specularDense = 0.0;
+        float ambientWeight = 0.3;
+        float diffusiveCoef = 0.9;
+        float diffuseWeight =  diffusiveCoef * (0.5 * (dot(l, n) + 1.0));
+
+        float sWeight = specularDense * pow(max(dot(n,
+                      h), 0.0), specularFocus);
+        return ambient_color * ambientWeight +
+             diffuseWeight * diffuse_color +
+             specular_color * sWeight;
+    }
+
+    void main() {
+        vec3 my_color = texture2D(texSampler2,fTexCoord).xyz;
+        vec3 dNormal = texture2D(texSampler1,fTexCoord).xyz;
+        vec3 n_perturbed = normalize(dNormal+fNormal);
+        vec3 n = (model * vec4(n_perturbed, 0.0)).xyz;
+
+        vec3 dir = normalize(lightdir); 
+        gl_FragColor = vec4(phong(dir, my_color, n), 1.0);
+    }
+</script>
+
+
 
 <script id="skybox-vs", type="notjs">
     precision highp float;
