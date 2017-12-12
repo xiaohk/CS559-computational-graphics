@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Graphics town framework code by Mike Gleicher
+  -- written October, 2015
+  -->
+<head>
+    <meta charset="UTF-8">
+    <title>Brokeback Mountain</title>
+</head>
+<body>
+<!-- load this stuff first -->
+<script src="Libraries/twgl-full.js"></script>
+<script src="Libraries/panel.js"></script>
+<script src="Libraries/arcball.js"></script>
+<script src="grobject.js"></script>
+<script src="helper.js"></script>
+<script src="texture/images.js"></script>
+
+<script src="ExampleObjects/ground.js"></script>
+
+<!-- Load models created by me -->
+<script src="my_objects/trunk.js"></script>
+<script src="my_objects/tent.js"></script>
+<script src="my_objects/tree.js"></script>
+<script src="my_objects/campFire.js"></script>
+<script src="my_objects/skybox.js"></script>
+
+<!-- Load obj models -->
+<script src="loaded_objects/sheepData.js"></script>
+<script src="loaded_objects/sheepData2.js"></script>
+<script src="loaded_objects/sheep.js"></script>
+<script src="loaded_objects/boyData.js"></script>
+<script src="loaded_objects/boy.js"></script>
+<script src="loaded_objects/bottleData.js"></script>
+<script src="loaded_objects/bottle.js"></script>
+<script src="loaded_objects/batData.js"></script>
+<script src="loaded_objects/bat.js"></script>
+
+<!-- Scene description files -->
+<script src="brokeback.js"></script>
+
+<!-- This gets loaded LAST (actually, it probably doesn't have to) -->
+<script src="graphicstown.js"></script>
+</body>
+
+<!-- all of the shaders get stuck here in the HTML because
+  -- that's the only way I know to load them without either
+  -- sticking them in JavaScript strings, or using a web server
+  -->
+
+<script id="trunk-vs" type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec3 vcolor;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+
+    void main(void) {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = pos.xyz;
+        fNormal = normalize(model * vec4(vnormal,0.0)).xyz;
+        fColor = vcolor;
+        gl_Position = proj * pos;
+    }
+</script>
+<script id="trunk-fs" type="notjs">
+    precision highp float;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+
+    uniform vec3 lightdir;
+
+
+	vec3 phong(in vec3 toLight) {
+
+		// Light vectors
+		vec3 l = normalize(toLight);
+		vec3 n = normalize(fNormal);
+		vec3 e = normalize(-fPosition);
+		vec3 h = normalize(e+l);
+
+		// Light colors
+		vec3 diffuse_color = fColor;
+		vec3 ambient_color = fColor;
+		vec3 specular_color = vec3(1.0, 1.0, 1.0);
+
+		// Light parameters
+		float specularFocus = 10.0;
+		float specularDense = 0.0;
+		float ambientWeight = 0.3;
+		float diffusiveCoef = 0.9;
+		float diffuseWeight =  diffusiveCoef * (0.5 * (dot(l, n) + 1.0));
+
+		float sWeight = specularDense * pow(max(dot(n,
+		              h), 0.0), specularFocus);
+		return ambient_color * ambientWeight +
+		     diffuseWeight * diffuse_color +
+		     specular_color * sWeight;
+	}
+
+	void main()
+	{
+	vec3 dir = normalize(lightdir); 
+	gl_FragColor = vec4(phong(dir), 1.0);
+	}
+</script>
+
+<script id="glass-vs" type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec3 vcolor;
+    attribute vec2 vTexCoord;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+
+    void main(void) {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = pos.xyz;
+        fNormal = normalize(model * vec4(vnormal,0.0)).xyz;
+        fColor = vcolor;
+        fTexCoord = vTexCoord;
+        gl_Position = proj * pos;
+    }
+</script>
+
+<script id="glass-fs" type="notjs">
+    precision highp float;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform vec3 lightdir;
+    uniform sampler2D texSampler;
+
+
+    vec3 phong(in vec3 toLight, vec3 color) {
+
+        // Light vectors
+        vec3 l = normalize(toLight);
+        vec3 n = normalize(fNormal);
+        vec3 e = normalize(-fPosition);
+        vec3 h = normalize(e+l);
+
+        // Light colors
+        vec3 diffuse_color = color;
+        vec3 ambient_color = color;
+        vec3 specular_color = vec3(1.0, 1.0, 1.0);
+
+        // Light parameters
+        float specularFocus = 10.0;
+        float specularDense = 0.0;
+        float ambientWeight = 0.3;
+        float diffusiveCoef = 0.9;
+        float diffuseWeight =  diffusiveCoef * (0.5 * (dot(l, n) + 1.0));
+
+        float sWeight = specularDense * pow(max(dot(n,
+                      h), 0.0), specularFocus);
+        return ambient_color * ambientWeight +
+             diffuseWeight * diffuse_color +
+             specular_color * sWeight;
+    }
+
+    void main() {
+        // Compute the back wall color
+        vec4 texColor = texture2D(texSampler,fTexCoord);
+        vec3 dir = normalize(lightdir); 
+        vec3 temp_color = texColor.xyz;
+        vec3 back_color = phong(dir, temp_color);
+
+        // Glass's ior is around 1.3333
+        const float l = 1.0;
+        const float ior = 1.33333;
+        const float size = 3.0;
+
+        // Comput the hitting point
+        vec3 r = normalize(fPosition);
+        vec3 n = normalize(fNormal);
+        float cos_theta1 = dot(-r, n);
+        float sin_theta1 = sqrt(1.0 - cos_theta1 * cos_theta1);
+        float sin_theta2 = ior * sin_theta1;
+        float cos_theta2 = sqrt(1.0 - sin_theta2 * sin_theta2);
+        vec3 p = cross(n, cross(r,n));
+        vec3 out_r = normalize(cos_theta2 * (-n) + sin_theta2 * p);
+        float d = (l - fPosition.z) / out_r.z;
+        vec3 hit_point = fPosition + d * out_r;
+
+        // Map to ground texture
+        vec4 color = texture2D(texSampler, vec2(hit_point.x, hit_point.y));
+        gl_FragColor = color;
+    }
+</script>
+
+<script id="stone-vs" type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec3 vcolor;
+    attribute vec2 vTexCoord;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+
+    void main(void) {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = pos.xyz;
+        fNormal = normalize(model * vec4(vnormal,0.0)).xyz;
+        fColor = vcolor;
+        fTexCoord = vTexCoord;
+        gl_Position = proj * pos;
+    }
+</script>
+
+<script id="stone-fs" type="notjs">
+    precision highp float;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform vec3 lightdir;
+    uniform sampler2D texSampler;
+
+
+    vec3 phong(in vec3 toLight, vec3 color) {
+
+        // Light vectors
+        vec3 l = normalize(toLight);
+        vec3 n = normalize(fNormal);
+        vec3 e = normalize(-fPosition);
+        vec3 h = normalize(e+l);
+
+        // Light colors
+        vec3 diffuse_color = color;
+        vec3 ambient_color = color;
+        vec3 specular_color = vec3(1.0, 1.0, 1.0);
+
+        // Light parameters
+        float specularFocus = 10.0;
+        float specularDense = 0.0;
+        float ambientWeight = 0.3;
+        float diffusiveCoef = 0.9;
+        float diffuseWeight =  diffusiveCoef * (0.5 * (dot(l, n) + 1.0));
+
+        float sWeight = specularDense * pow(max(dot(n,
+                      h), 0.0), specularFocus);
+        return ambient_color * ambientWeight +
+             diffuseWeight * diffuse_color +
+             specular_color * sWeight;
+    }
+
+    void main() {
+        vec4 texColor = texture2D(texSampler,fTexCoord);
+        vec3 dir = normalize(lightdir); 
+        vec3 temp_color = texColor.xyz;
+        gl_FragColor = vec4(phong(dir, temp_color), 1.0);
+    }
+</script>
+
+<script id="tent-vs" type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec3 vcolor;
+    attribute vec2 vTexCoord;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+
+    void main(void) {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = pos.xyz;
+        fNormal = normalize(model * vec4(vnormal,0.0)).xyz;
+        fColor = vcolor;
+        fTexCoord = vTexCoord;
+        gl_Position = proj * pos;
+    }
+</script>
+
+<script id="tent-fs" type="notjs">
+    precision highp float;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec2 fTexCoord;
+
+    uniform vec3 lightdir;
+    uniform mat4 model;
+    uniform sampler2D texSampler1;
+    uniform sampler2D texSampler2;
+
+    vec3 phong(in vec3 toLight, vec3 color, vec3 normal) {
+
+        // Light vectors
+        vec3 l = normalize(toLight);
+        vec3 n = normalize(normal);
+        vec3 e = normalize(-fPosition);
+        vec3 h = normalize(e+l);
+
+        // Light colors
+        vec3 diffuse_color = color;
+        vec3 ambient_color = color;
+        vec3 specular_color = vec3(1.0, 1.0, 1.0);
+
+        // Light parameters
+        float specularFocus = 10.0;
+        float specularDense = 0.0;
+        float ambientWeight = 0.3;
+        float diffusiveCoef = 0.9;
+        float diffuseWeight =  diffusiveCoef * (0.5 * (dot(l, n) + 1.0));
+
+        float sWeight = specularDense * pow(max(dot(n,
+                      h), 0.0), specularFocus);
+        return ambient_color * ambientWeight +
+             diffuseWeight * diffuse_color +
+             specular_color * sWeight;
+    }
+
+    void main() {
+        vec3 my_color = texture2D(texSampler2,fTexCoord).xyz;
+        vec3 dNormal = texture2D(texSampler1,fTexCoord).xyz;
+        vec3 n_perturbed = normalize(dNormal+fNormal);
+        vec3 n = (model * vec4(n_perturbed, 0.0)).xyz;
+
+        vec3 dir = normalize(lightdir); 
+        gl_FragColor = vec4(phong(dir, my_color, n), 1.0);
+    }
+</script>
+
+
+
+<script id="skybox-vs", type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+
+    varying vec3 fPosition;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+    uniform samplerCube texSamplerCube;
+
+    void main() {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = vpos;
+        gl_Position = proj * pos;
+    }
+</script>
+
+<script id="skybox-fs", type="notjs">
+    precision highp float;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+    uniform samplerCube texSamplerCube;
+
+    varying vec3 fPosition;
+
+    void main() {
+        vec4 texColorCube = textureCube(texSamplerCube, fPosition);
+        gl_FragColor = vec4(texColorCube.xyz, 1.0);
+    }
+</script>
+
+<script id="pole-vs" type="notjs">
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec3 vcolor;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+
+
+    void main(void) {
+        vec4 pos = view * model * vec4(vpos, 1.0);
+        fPosition = pos.xyz;
+        fNormal = normalize(model * vec4(vnormal,0.0)).xyz;
+        fColor = vcolor;
+        gl_Position = proj * pos;
+    }
+</script>
+<script id="pole-fs" type="notjs">
+    precision highp float;
+
+    varying vec3 fColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+
+    uniform vec3 lightdir;
+
+
+    vec3 phong(in vec3 toLight) {
+
+        // Light vectors
+        vec3 l = normalize(toLight);
+        vec3 n = normalize(fNormal);
+        vec3 e = normalize(-fPosition);
+        vec3 h = normalize(e+l);
+
+        // Light colors
+        vec3 diffuse_color = fColor;
+        vec3 ambient_color = fColor;
+        vec3 specular_color = vec3(1.0, 1.0, 1.0);
+
+        // Light parameters
+        float specularFocus = 20.0;
+        float specularDense = 20.0;
+        float ambientWeight = 0.3;
+        float diffusiveCoef = 0.9;
+        float diffuseWeight =  diffusiveCoef * (0.5 * (dot(l, n) + 1.0));
+
+        float sWeight = specularDense * pow(max(dot(n,
+                      h), 0.0), specularFocus);
+        return ambient_color * ambientWeight +
+             diffuseWeight * diffuse_color +
+             specular_color * sWeight;
+    }
+
+    void main()
+    {
+    vec3 dir = normalize(lightdir); 
+    gl_FragColor = vec4(phong(dir), 1.0);
+    }
+</script>
+
+<!-- Special Ground Plane Shader - makes a boring
+  -- checkerboard
+  -->
+<script id="ground-vs" type="not-js">
+    precision highp float;
+
+    attribute vec3 vpos;
+    varying vec3 outPos;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+
+    void main(void) {
+        gl_Position = proj * view * vec4(vpos, 1.0);
+        outPos = vpos;
+    }
+</script>
+<script id="ground-fs" type="notjs">
+    // note this is used for more than just the cube
+    precision highp float;
+    varying vec3 outPos;
+    void main(void) {
+        float xs = step(1.0,mod(outPos.x,2.0));
+        float zs = step(1.0,mod(outPos.z,2.0));
+        float ss = (xs>.5) ? zs : 1.0-zs;
+        ss = 1.0-zs;
+        gl_FragColor = mix(vec4(0.5,0.5,0.5,1),
+                           vec4(0.3,0.5,0.4,1),
+                           ss
+                           );
+
+    }
+</script>
+
+<body>
+    <p id="description">
+        <h1> Description</h1>
+        The inspiration for this project is Ang Lee's movie "Brokeback Mountain".
+        Here are some scenes of the movie in case you haven't watched it.
+        <br><br>
+        <a ><img src="https://i.imgur.com/7edHlEu.jpg"/></a> 
+        <a ><img src="https://i.imgur.com/IlayTwo.jpg"/></a> 
+        <br><br>
+        <a ><img src="https://i.imgur.com/gEIubUe.jpg"/></a> 
+        <br><br>
+        So, I try to implement some of the "brokebackish" features: Tent, Campfire, Cowboys, Sheeps, Pine trees, and some Trunks.
+
+        <h1 align="center"> Project 7</h1>
+        <h2> Models Created by Me </h2>
+        <ul>
+
+        <li> <b> Campfire: </b> I added randomness to generate the size of stones around the campfire, so it looks more natural and asymmetric. The design of middle woods is also used in the framework of the tent. </li>
+        <li> <b> Tent: </b> I added some poles around the tent to make it more like the one in the movie. I also added a special shader (High specular light) to the pole, for its metallic looking.</li>
+        <li> <b> Pine trees: </b> I am very proud that I designed a dynamic way to draw different pine trees. If you look the trees in detail, you will find each tree is special, in terms of the shape, layer and height.</li>
+        <li> <b> Trunks: </b> They are just basic cylinders.</li></ul>
+        
+
+        <h2> Models Found on Web </h2>
+        <ul>
+        <li> <b> Cowboy: </b> Still need to figure out how to map the texture.</li>
+        <li> <b> Sheep: </b> I added a path and animation for the sheeps.</li></ul>
+        
+        <h1 align="center"> Project 8</h1>
+        <h2> Models Created by Me </h2>
+        <ul>
+
+        <li> <b> Campfire: </b> I kept the randomness of the size, and added a texture for the stone, to make them more stone-like. I decided not to add trunk texture to the wood in the campfire, because they are too small to show the detail of the texture.</li>
+        <li> <b> Tent: </b> I added a canvas cloth texture to the tent, I thought about making a entrance for the tent, but it was too hard to draw it on the texture image.</li>
+        <li> <b> Pine trees: </b> I could add trunk texture to the trees, but i decided not to, because they are too small to show the texture.</li>
+        <li> <b> Trunks: </b> I figured out a way to wrap texture to the side of a cylinder! To make the texture look real, I make the width height ratio of the image as 2*pi*ratio : height, then compress it to a 2^k * 2^k square. It looks great. Also I added randomness to generate the top circle texture, to make it look cool. <b>I love randomness!</b></li></ul>
+        
+
+        <h2> Models Found on Web </h2>
+        <ul>
+        <li> <b> Cowboy: </b> There is a texture image given with the .obj file, after studying that image. <b>I created two texture images </b> to match the hat color, clothing style of Jack and Ennis.</li>
+        <li> <b> Sheep: </b> I used the given texture with the sheeps.</li></ul>
+        
+        <h1 align="center"> Project 9</h1>
+        <h2> Cubemap Skybox </h2>
+        I added a cubemap skybox texture to create environment for the scene.
+        <h2> Normal Mapping </h2>
+        I added 4 different normal mapping to make the texture for the vent more realistic, and textures of sheeps more diverse.
+        <br><br>
+        <a ><img src="https://i.imgur.com/O7LNlDx.png", height="300"/></a> 
+        <a ><img src="https://i.imgur.com/JmE7aEv.png", height="300"/></a> 
+        <a ><img src="https://i.imgur.com/2Wc52NW.png", height="300"/></a>
+        <br>
+        <h2> Glass Effect </h2>
+        I also tried to simulate the fraction degree to make a glass texture effect. After computing the hitting point going though the glass bottle, I map it directly to the ground texture, although the "correct" way requires 2-pass rendering. Since the bottle is relatively small, you might want to use "Drive" mode to see the effect.
+        <br><br>
+        <a ><img src="https://i.imgur.com/rRQSS1Q.png", height="300"/></a> 
+        <a ><img src="https://i.imgur.com/hYf6mfJ.png", height="300"/></a> 
+        <a ><img src="https://i.imgur.com/Jdvyzno.png", height="300"/></a> 
+
+        <h1 align="center"> Project 10</h1>
+        In this final project, I wrapped up project 7 to 9, and did some minor fixes. I also implemented a hermite cubic curve with 4 segments. I loaded a new bat object and made if fly around the camp following the curve track.
+    </p>
+</body>
+</html>
